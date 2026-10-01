@@ -7,7 +7,7 @@
 window.FC_CONFIG = {
   // Alamat Firebase Realtime Database, contoh:
   // "https://agi-flipclock-default-rtdb.asia-southeast1.firebasedatabase.app"
-  FIREBASE_DB_URL: "",
+     FIREBASE_DB_URL: "https://agi-flipclock-default-rtdb.asia-southeast1.firebasedatabase.app",
 
   // Alamat halaman remote (GitHub Pages dari folder /docs repo ini)
   REMOTE_PAGE_URL: "https://brot1994.github.io/FlipClock/"
