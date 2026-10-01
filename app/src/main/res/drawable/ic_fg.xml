@@ -1,0 +1,14 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- left card -->
+    <path android:fillColor="#2A2A2E" android:pathData="M30,34h21a4,4 0 0 1 4,4v14h-29v-14a4,4 0 0 1 4,-4z"/>
+    <path android:fillColor="#1F1F22" android:pathData="M26,56h29v14a4,4 0 0 1 -4,4h-21a4,4 0 0 1 -4,-4z"/>
+    <!-- right card -->
+    <path android:fillColor="#2A2A2E" android:pathData="M57,34h21a4,4 0 0 1 4,4v14h-29v-14a4,4 0 0 1 4,-4z"/>
+    <path android:fillColor="#1F1F22" android:pathData="M53,56h29v14a4,4 0 0 1 -4,4h-21a4,4 0 0 1 -4,-4z"/>
+    <!-- digit 1 (left) -->
+    <path android:fillColor="#ECEAE4" android:pathData="M38,42l6,-3h3v31h-5v-24l-4,2z"/>
+    <!-- digit 2 (right) as simple strokes -->
+    <path android:fillColor="#F2A33A" android:pathData="M60,40h15a3,3 0 0 1 3,3v9a3,3 0 0 1 -1,2l-11,11h12v5h-19v-4l13,-13v-8h-12z"/>
+</vector>

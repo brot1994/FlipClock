@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Flip Clock</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="stage">
+  <div id="clock">
+    <div id="cards">
+      <div class="card" id="cardH"></div>
+      <div class="card" id="cardM"></div>
+      <div id="secwrap">
+        <div id="ampm"></div>
+        <div class="card small" id="cardS"></div>
+      </div>
+    </div>
+    <div id="info">
+      <div id="dateLine"></div>
+      <div id="customLine"></div>
+    </div>
+  </div>
+  <div id="dim"></div>
+  <div id="netdot" title="Remote terputus"></div>
+  <button id="gear" aria-label="Buka pengaturan">
+    <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+  </button>
+</div>
+
+<div id="panel" class="hidden" role="dialog" aria-label="Pengaturan">
+  <div class="phead">
+    <button class="iconbtn" id="closeBtn" aria-label="Tutup pengaturan">
+      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="ptitle">Pengaturan</div>
+  </div>
+
+  <div class="pbody">
+
+    <section>
+      <h3>Tema cepat</h3>
+      <div class="seg" id="themeSeg"></div>
+    </section>
+
+    <section>
+      <h3>Warna</h3>
+      <div class="box" id="colorBox"></div>
+    </section>
+
+    <section>
+      <h3>Teks kustom</h3>
+      <div class="box pad">
+        <label class="row">
+          <div class="rtxt"><div class="rl">Tampilkan teks kustom</div><div class="rd">Muncul di bawah hari dan tanggal; jam mengecil otomatis</div></div>
+          <input type="checkbox" class="sw" id="customOn">
+        </label>
+        <label for="customText" class="lbl">Isi teks (maks. 60 huruf)</label>
+        <input id="customText" type="text" class="txt" maxlength="60" placeholder="Contoh: ZERO ACCIDENT · UTAMAKAN K3">
+      </div>
+    </section>
+
+    <section>
+      <h3>Remote via internet</h3>
+      <div class="box pad">
+        <label class="row">
+          <div class="rtxt"><div class="rl">Izinkan remote</div><div class="rd">Teks dan warna bisa diubah dari HP/PC di mana saja</div></div>
+          <input type="checkbox" class="sw" id="remoteOn">
+        </label>
+        <div id="remoteDetail">
+          <div class="remote-grid">
+            <div id="qr" class="qr" aria-label="QR code halaman remote"></div>
+            <div class="rinfo">
+              <label for="devName" class="lbl">Nama tablet</label>
+              <input id="devName" type="text" class="txt" maxlength="30" placeholder="Contoh: Tablet Lobby">
+              <div class="lbl" style="margin-top:10px">Kode perangkat</div>
+              <div id="devCode" class="code"></div>
+            </div>
+          </div>
+          <div class="status"><span id="netDotSmall" class="sdot"></span><span id="netText"></span></div>
+          <div class="hint">Scan QR ini dengan HP untuk membuka halaman remote. Siapa pun yang punya link dari QR ini bisa mengubah tulisan, jadi simpan untuk Anda sendiri.</div>
+          <details class="adv">
+            <summary>Pengaturan lanjutan</summary>
+            <label for="dbUrl" class="lbl">Alamat Firebase Realtime Database</label>
+            <input id="dbUrl" type="url" class="txt" placeholder="https://xxxx-default-rtdb.asia-southeast1.firebasedatabase.app">
+            <label for="remoteUrl" class="lbl">Alamat halaman remote</label>
+            <input id="remoteUrl" type="url" class="txt">
+            <button class="btn ghost" id="newKeyBtn">Buat kode perangkat baru</button>
+            <div class="hint">Kode baru membuat link/QR lama tidak berlaku lagi.</div>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h3>Tampilan</h3>
+      <div class="box" id="toggleBox"></div>
+    </section>
+
+    <section>
+      <h3>Kecerahan layar</h3>
+      <div class="box pad">
+        <label class="row">
+          <div class="rtxt"><div class="rl">Atur kecerahan manual</div><div class="rd">Matikan untuk mengikuti kecerahan sistem</div></div>
+          <input type="checkbox" class="sw" id="brightOn">
+        </label>
+        <div class="slider">
+          <label for="bright" id="brightVal" class="bval">80%</label>
+          <input id="bright" type="range" min="5" max="100" step="1">
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h3>Tablet</h3>
+      <div class="box pad">
+        <label class="row">
+          <div class="rtxt"><div class="rl">Buka otomatis saat tablet menyala</div><div class="rd">Setelah mati listrik / restart, jam langsung tampil</div></div>
+          <input type="checkbox" class="sw" id="autoOn">
+        </label>
+        <div id="overlayWarn" class="warn hidden">
+          <div>Android versi ini butuh izin <b>"Tampil di atas aplikasi lain"</b> agar jam bisa terbuka sendiri setelah tablet menyala.</div>
+          <button class="btn" id="overlayBtn">Buka pengaturan izin</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="ver">Flip Clock v1.0 · ketuk layar untuk memunculkan tombol pengaturan</div>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="qrcode.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

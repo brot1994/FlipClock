@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F3F2EE">
+<meta name="robots" content="noindex">
+<title>Remote Flip Clock</title>
+<style>
+@font-face { font-family: 'Oswald'; font-weight: 600; src: url('fonts/oswald-latin-600-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Archivo'; font-weight: 500; src: url('fonts/archivo-latin-500-normal.woff2') format('woff2'); }
+@font-face { font-family: 'Archivo'; font-weight: 600; src: url('fonts/archivo-latin-600-normal.woff2') format('woff2'); }
+:root {
+  --ink: #1C1C1F; --muted: #55555B; --line: #DAD9D4; --paper: #F3F2EE; --white: #FFFFFF;
+  --ok: #2E9E5B; --off: #A8A7A2; --err: #B42318;
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); }
+body { font-family: 'Archivo', system-ui, sans-serif; }
+.wrap { max-width: 520px; margin: 0 auto; padding: 22px 16px 48px; display: flex; flex-direction: column; gap: 22px; }
+h1 { font-family: 'Oswald', sans-serif; font-weight: 600; font-size: 30px; margin: 0; letter-spacing: 0.01em; }
+.sub { font-size: 14px; color: var(--muted); margin-top: 4px; }
+h2 { margin: 0 0 10px 2px; font-size: 12px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: var(--muted); }
+.box { background: var(--white); border-radius: 14px; }
+.pad { padding: 14px 16px 16px; display: flex; flex-direction: column; gap: 12px; }
+
+.devs { display: flex; flex-direction: column; gap: 8px; }
+.dev {
+  display: flex; align-items: center; gap: 12px; min-height: 58px; padding: 10px 14px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--white); cursor: pointer; text-align: left; width: 100%;
+  font: inherit; color: var(--ink);
+}
+.dev.on { border: 2px solid var(--ink); padding: 9px 13px; }
+.dot { width: 10px; height: 10px; border-radius: 5px; flex-shrink: 0; background: var(--off); }
+.dot.ok { background: var(--ok); }
+.dname { font-size: 16px; font-weight: 600; }
+.dstat { font-size: 13px; color: var(--muted); }
+.dcode { font-family: monospace; font-size: 13px; color: var(--muted); }
+.grow { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+.preview {
+  height: 200px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: 0 14px; box-shadow: 0 8px 24px rgba(0,0,0,0.12); overflow: hidden;
+}
+.pcards { display: flex; gap: 12px; }
+.pcard { position: relative; border-radius: 8px; overflow: hidden; font-family: 'Oswald', sans-serif; font-weight: 600; }
+.pcard .hl { position: absolute; left: 0; top: 0; width: 100%; height: 50%; background: rgba(255,255,255,0.05); }
+.pcard .num { position: absolute; left: 0; top: -3%; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; line-height: 1; }
+.pcard .sp { position: absolute; left: 0; width: 100%; height: 2px; }
+.pdate { font-size: 10px; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; }
+.pcustom { font-size: 13px; font-weight: 600; text-align: center; }
+
+.row { display: flex; align-items: center; gap: 14px; min-height: 44px; cursor: pointer; }
+.rl { flex: 1; font-size: 16px; font-weight: 500; }
+.lbl { font-size: 13px; color: var(--muted); }
+.sw { appearance: none; -webkit-appearance: none; margin: 0; width: 52px; height: 30px; border-radius: 15px; background: #C9C8C3; position: relative; cursor: pointer; flex-shrink: 0; transition: background .2s; }
+.sw::after { content: ""; position: absolute; left: 3px; top: 3px; width: 24px; height: 24px; border-radius: 12px; background: #fff; transition: transform .2s; }
+.sw:checked { background: var(--ink); }
+.sw:checked::after { transform: translateX(22px); }
+.txt { width: 100%; min-height: 52px; border-radius: 10px; border: 1px solid #C9C8C3; background: #fff; color: var(--ink); font: 500 17px 'Archivo', sans-serif; padding: 12px 14px; resize: none; }
+.txt:disabled { opacity: .45; }
+.txt:focus { outline: 2px solid var(--ink); outline-offset: 1px; }
+.count { font-size: 12px; color: var(--muted); text-align: right; margin-top: -6px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { display: inline-flex; align-items: center; border-radius: 20px; border: 1px solid #C9C8C3; background: var(--paper); overflow: hidden; }
+.chip button { border: none; background: transparent; font: 500 13px 'Archivo', sans-serif; color: var(--ink); cursor: pointer; min-height: 40px; }
+.chip .t { padding: 8px 4px 8px 12px; }
+.chip .x { padding: 8px 10px 8px 6px; color: var(--muted); font-size: 15px; }
+.linkbtn { border: none; background: none; color: var(--ink); text-decoration: underline; font: 500 13px 'Archivo', sans-serif; cursor: pointer; padding: 6px 0; align-self: flex-start; min-height: 32px; }
+
+.cg { padding: 16px; border-bottom: 1px solid #E4E3DE; display: flex; flex-direction: column; gap: 12px; }
+.cg:last-child { border-bottom: none; }
+.ch { display: flex; justify-content: space-between; align-items: center; }
+.hex { font-family: monospace; font-size: 13px; color: var(--muted); }
+.sws { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.swatch { width: 38px; height: 38px; border-radius: 19px; padding: 0; cursor: pointer; border: 1px solid #B8B7B2; }
+.swatch.on { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--ink); }
+.cp { appearance: none; -webkit-appearance: none; width: 38px; height: 38px; border: 1px dashed #8A8A90; border-radius: 19px; padding: 0; background: transparent; cursor: pointer; }
+.cp::-webkit-color-swatch-wrapper { padding: 4px; }
+.cp::-webkit-color-swatch { border: none; border-radius: 15px; }
+
+.send { height: 58px; border: none; border-radius: 14px; background: var(--ink); color: #fff; font: 600 17px 'Archivo', sans-serif; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; }
+.send:disabled { opacity: .6; }
+.send.ok { background: #1F6B3A; }
+.send.bad { background: var(--err); }
+.msg { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.45; }
+.msg.err { color: var(--err); }
+.empty { padding: 18px 16px; font-size: 15px; line-height: 1.5; }
+.empty ol { margin: 8px 0 0; padding-left: 20px; }
+details summary { cursor: pointer; font-size: 14px; color: var(--muted); padding: 8px 2px; }
+.btn2 { min-height: 46px; border-radius: 10px; border: 1px solid #C9C8C3; background: #fff; font: 600 15px 'Archivo', sans-serif; color: var(--ink); cursor: pointer; padding: 0 16px; }
+.danger { color: var(--err); }
+.hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div>
+    <h1>Remote Flip Clock</h1>
+    <div class="sub">Ubah tulisan dan warna jam di tablet dari mana saja</div>
+  </div>
+
+  <div id="emptyBox" class="box empty hidden">
+    <b>Belum ada tablet di daftar.</b>
+    <ol>
+      <li>Di tablet, ketuk layar jam lalu tombol pengaturan (ikon roda gigi).</li>
+      <li>Buka bagian <b>Remote via internet</b>.</li>
+      <li>Scan QR code di sana dengan kamera HP ini. Tablet akan otomatis masuk ke daftar.</li>
+    </ol>
+  </div>
+
+  <section id="devSection" class="hidden">
+    <h2>Pilih tablet</h2>
+    <div class="devs" id="devList"></div>
+  </section>
+
+  <div id="editor" class="hidden" style="display:flex;flex-direction:column;gap:22px">
+    <section>
+      <h2 id="pvTitle">Pratinjau</h2>
+      <div class="preview" id="preview">
+        <div class="pcards">
+          <div class="pcard" id="pc1"><div class="hl"></div><div class="num" id="pH">00</div><div class="sp"></div></div>
+          <div class="pcard" id="pc2"><div class="hl"></div><div class="num" id="pM">00</div><div class="sp"></div></div>
+        </div>
+        <div class="pdate" id="pDate"></div>
+        <div class="pcustom" id="pCustom"></div>
+      </div>
+    </section>
+
+    <section>
+      <h2>Teks kustom</h2>
+      <div class="box pad">
+        <label class="row"><span class="rl">Tampilkan teks</span><input type="checkbox" class="sw" id="customOn"></label>
+        <label for="customText" class="lbl">Isi teks (maks. 60 huruf)</label>
+        <textarea id="customText" class="txt" rows="2" maxlength="60" placeholder="Ketik tulisan untuk tablet"></textarea>
+        <div class="count" id="count">0/60</div>
+        <div class="lbl">Teks cepat</div>
+        <div class="chips" id="chips"></div>
+        <button class="linkbtn" id="saveQuick">+ Simpan teks ini sebagai teks cepat</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>Warna</h2>
+      <div class="box" id="colors"></div>
+    </section>
+
+    <button class="send" id="sendBtn">Kirim ke tablet</button>
+    <div class="msg" id="sendMsg"></div>
+
+    <details>
+      <summary>Kelola tablet ini</summary>
+      <div class="box pad">
+        <div class="lbl">Kode perangkat: <span id="mCode" style="font-family:monospace"></span></div>
+        <button class="btn2 danger" id="removeBtn">Hapus tablet ini dari daftar di HP ini</button>
+      </div>
+    </details>
+  </div>
+
+  <details id="manualBox">
+    <summary>Tambah tablet secara manual</summary>
+    <div class="box pad">
+      <label class="lbl" for="mDb">Alamat Firebase Realtime Database</label>
+      <input class="txt" id="mDb" type="url" placeholder="https://xxxx-default-rtdb.asia-southeast1.firebasedatabase.app">
+      <label class="lbl" for="mKey">Kunci perangkat (24 huruf, ada di link QR setelah &amp;k=)</label>
+      <input class="txt" id="mKey" type="text" autocomplete="off" autocapitalize="off">
+      <label class="lbl" for="mName">Nama tablet</label>
+      <input class="txt" id="mName" type="text" placeholder="Tablet Lobby">
+      <button class="btn2" id="mAdd">Tambahkan</button>
+    </div>
+  </details>
+
+  <div class="msg">Link dari QR tablet bersifat rahasia — siapa pun yang memilikinya bisa mengubah tulisan di tablet.</div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+  var DEV_KEY = 'fcr_devices_v1', QUICK_KEY = 'fcr_quick_v1', SEL_KEY = 'fcr_sel_v1';
+  var HARI = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  var BULAN = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+  var PALETTES = {
+    textColor: [['Putih gading','#ECEAE4'],['Putih','#FFFFFF'],['Amber','#F2A33A'],['Biru muda','#5AC8FA'],['Hijau','#7ED9A0'],['Merah','#FF6B5E']],
+    cardColor: [['Arang','#1C1C1F'],['Hitam','#0A0A0A'],['Biru tua','#1F2A3A'],['Coklat tua','#3A2A20'],['Hijau tua','#1E3328'],['Putih','#F4F2EC']],
+    bgColor: [['Hitam arang','#0E0E0F'],['Hitam pekat','#000000'],['Abu terang','#E7E6E2'],['Biru malam','#0F1A24'],['Merah marun','#2A1212'],['Abu tua','#2A2A2E']],
+    accent: [['Amber','#F2A33A'],['Biru muda','#5AC8FA'],['Hijau','#7ED9A0'],['Merah','#FF6B5E'],['Putih gading','#ECEAE4'],['Ungu','#B98CFF']]
+  };
+  var GROUPS = [['textColor','Warna huruf'],['cardColor','Warna kartu'],['bgColor','Warna latar'],['accent','Warna detik / aksen']];
+  var DEFAULT_QUICK = ['ZERO ACCIDENT · UTAMAKAN K3', 'Briefing pagi 07.30', 'Istirahat 12.00–13.00', 'Selamat datang, tamu AGI'];
+  var DEFAULT_CFG = { textColor: '#ECEAE4', cardColor: '#1C1C1F', bgColor: '#0E0E0F', accent: '#F2A33A', custom: false, customText: '' };
+
+  function $(id) { return document.getElementById(id); }
+  function load(k, d) { try { var v = JSON.parse(localStorage.getItem(k)); return v === null || v === undefined ? d : v; } catch (e) { return d; } }
+  function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } }
+  function pad(n) { return (n < 10 ? '0' : '') + n; }
+  function isHex(c) { return typeof c === 'string' && /^#[0-9a-fA-F]{6}$/.test(c); }
+  function lum(hex) { var h = hex.replace('#',''); return 0.2126*parseInt(h.substr(0,2),16)/255 + 0.7152*parseInt(h.substr(2,2),16)/255 + 0.0722*parseInt(h.substr(4,2),16)/255; }
+  function clean(u) { return String(u || '').trim().replace(/\/+$/, ''); }
+  function code(k) { return (k.substr(0,4) + '-' + k.substr(4,4)).toUpperCase(); }
+
+  var devices = load(DEV_KEY, []);
+  var quick = load(QUICK_KEY, DEFAULT_QUICK.slice());
+  var sel = load(SEL_KEY, 0);
+  var cfg = JSON.parse(JSON.stringify(DEFAULT_CFG));
+  var statuses = {};
+
+  // ---- add device from QR link (#db=...&k=...&n=...)
+  (function fromHash() {
+    var h = location.hash.replace(/^#/, '');
+    if (!h) return;
+    var p = {};
+    h.split('&').forEach(function (kv) { var i = kv.indexOf('='); if (i > 0) p[kv.substr(0, i)] = decodeURIComponent(kv.substr(i + 1)); });
+    if (p.db && p.k && p.k.length >= 20) {
+      addDevice(clean(p.db), p.k, p.n || 'Tablet');
+    }
+    try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { location.hash = ''; }
+  })();
+
+  function addDevice(db, key, name) {
+    for (var i = 0; i < devices.length; i++) {
+      if (devices[i].k === key) { devices[i].db = db; devices[i].n = name || devices[i].n; sel = i; store(DEV_KEY, devices); store(SEL_KEY, sel); return; }
+    }
+    devices.push({ db: db, k: key, n: name || 'Tablet' });
+    sel = devices.length - 1;
+    store(DEV_KEY, devices); store(SEL_KEY, sel);
+  }
+
+  function cur() { return devices[sel] || null; }
+  function url(d, part) { return d.db + '/clocks/' + d.k + '/' + part + '.json'; }
+
+  // ---- device list
+  function renderDevices() {
+    var has = devices.length > 0;
+    $('emptyBox').classList.toggle('hidden', has);
+    $('devSection').classList.toggle('hidden', !has);
+    $('editor').classList.toggle('hidden', !has);
+    if (sel >= devices.length) sel = 0;
+    var list = $('devList');
+    list.innerHTML = '';
+    devices.forEach(function (d, i) {
+      var st = statuses[d.k];
+      var online = st && st.lastSeen && (Date.now() - st.lastSeen < 150000);
+      var name = (st && st.name) || d.n || 'Tablet';
+      var b = document.createElement('button');
+      b.className = 'dev' + (i === sel ? ' on' : '');
+      b.innerHTML = '<span class="dot"></span><span class="grow"><span class="dname"></span><span class="dstat"></span></span><span class="dcode"></span>';
+      b.querySelector('.dot').className = 'dot' + (online ? ' ok' : '');
+      b.querySelector('.dname').textContent = name;
+      b.querySelector('.dstat').textContent = !st ? 'Memeriksa…' : online ? 'Online' : ('Offline' + (st.lastSeen ? ' · terakhir ' + ago(st.lastSeen) : ''));
+      b.querySelector('.dcode').textContent = code(d.k);
+      b.addEventListener('click', function () { sel = i; store(SEL_KEY, sel); renderDevices(); loadConfig(); });
+      list.appendChild(b);
+    });
+    var d = cur();
+    if (d) {
+      var st2 = statuses[d.k];
+      var nm = (st2 && st2.name) || d.n || 'Tablet';
+      $('pvTitle').textContent = 'Pratinjau ' + nm;
+      $('sendBtn').textContent = 'Kirim ke ' + nm;
+      $('mCode').textContent = code(d.k);
+    }
+  }
+
+  function ago(ts) {
+    var s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+    if (s < 60) return s + ' detik lalu';
+    if (s < 3600) return Math.round(s / 60) + ' menit lalu';
+    if (s < 86400) return Math.round(s / 3600) + ' jam lalu';
+    return Math.round(s / 86400) + ' hari lalu';
+  }
+
+  function refreshStatus() {
+    devices.forEach(function (d) {
+      fetch(url(d, 'status')).then(function (r) { return r.json(); }).then(function (j) {
+        statuses[d.k] = j || {};
+        renderDevices();
+      }).catch(function () { statuses[d.k] = statuses[d.k] || {}; renderDevices(); });
+    });
+  }
+
+  // ---- config load / edit
+  function loadConfig() {
+    var d = cur();
+    if (!d) return;
+    $('sendMsg').textContent = 'Memuat pengaturan tablet…';
+    $('sendMsg').className = 'msg';
+    fetch(url(d, 'config')).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    }).then(function (j) {
+      cfg = JSON.parse(JSON.stringify(DEFAULT_CFG));
+      if (j) {
+        ['textColor','cardColor','bgColor','accent'].forEach(function (k) { if (isHex(j[k])) cfg[k] = j[k].toUpperCase(); });
+        cfg.custom = !!j.custom;
+        cfg.customText = typeof j.customText === 'string' ? j.customText : '';
+      }
+      $('sendMsg').textContent = j && j.updatedAt ? 'Terakhir diubah ' + ago(j.updatedAt) + (j.by === 'tablet' ? ' (dari tablet)' : ' (dari remote)') : '';
+      renderEditor();
+    }).catch(function (e) {
+      $('sendMsg').textContent = 'Gagal memuat dari server. Periksa internet HP ini. (' + e.message + ')';
+      $('sendMsg').className = 'msg err';
+      renderEditor();
+    });
+  }
+
+  function buildColors() {
+    var box = $('colors');
+    GROUPS.forEach(function (g) {
+      var key = g[0];
+      var w = document.createElement('div');
+      w.className = 'cg';
+      w.setAttribute('data-key', key);
+      w.innerHTML = '<div class="ch"><span class="rl"></span><span class="hex"></span></div><div class="sws"></div>';
+      w.querySelector('.rl').textContent = g[1];
+      var sws = w.querySelector('.sws');
+      PALETTES[key].forEach(function (c) {
+        var b = document.createElement('button');
+        b.className = 'swatch';
+        b.style.background = c[1];
+        b.setAttribute('aria-label', g[1] + ': ' + c[0]);
+        b.setAttribute('data-hex', c[1]);
+        b.addEventListener('click', function () { cfg[key] = c[1]; dirty(); });
+        sws.appendChild(b);
+      });
+      var cp = document.createElement('input');
+      cp.type = 'color'; cp.className = 'cp';
+      cp.setAttribute('aria-label', g[1] + ' kustom');
+      cp.addEventListener('input', function () { cfg[key] = cp.value.toUpperCase(); dirty(); });
+      sws.appendChild(cp);
+      box.appendChild(w);
+    });
+  }
+
+  function renderChips() {
+    var c = $('chips');
+    c.innerHTML = '';
+    quick.forEach(function (t, i) {
+      var chip = document.createElement('span');
+      chip.className = 'chip';
+      chip.innerHTML = '<button class="t"></button><button class="x" aria-label="Hapus teks cepat">×</button>';
+      chip.querySelector('.t').textContent = t;
+      chip.querySelector('.t').addEventListener('click', function () { cfg.customText = t; cfg.custom = true; dirty(); });
+      chip.querySelector('.x').addEventListener('click', function () { quick.splice(i, 1); store(QUICK_KEY, quick); renderChips(); });
+      c.appendChild(chip);
+    });
+  }
+
+  function dirty() {
+    var b = $('sendBtn');
+    b.classList.remove('ok', 'bad');
+    var d = cur();
+    var nm = d ? ((statuses[d.k] && statuses[d.k].name) || d.n) : 'tablet';
+    b.textContent = 'Kirim ke ' + nm;
+    $('sendMsg').textContent = 'Ada perubahan yang belum dikirim.';
+    $('sendMsg').className = 'msg';
+    renderEditor();
+  }
+
+  function renderEditor() {
+    $('customOn').checked = !!cfg.custom;
+    var ta = $('customText');
+    ta.disabled = !cfg.custom;
+    if (document.activeElement !== ta) ta.value = cfg.customText || '';
+    $('count').textContent = (cfg.customText || '').length + '/60';
+    var gs = $('colors').getElementsByClassName('cg');
+    for (var i = 0; i < gs.length; i++) {
+      var key = gs[i].getAttribute('data-key');
+      gs[i].querySelector('.hex').textContent = cfg[key];
+      var sw = gs[i].getElementsByClassName('swatch');
+      for (var j = 0; j < sw.length; j++) sw[j].classList.toggle('on', sw[j].getAttribute('data-hex') === cfg[key]);
+      var cp = gs[i].querySelector('.cp');
+      if (document.activeElement !== cp) cp.value = cfg[key].toLowerCase();
+    }
+    renderPreview();
+  }
+
+  function renderPreview() {
+    var d = new Date();
+    var hasC = cfg.custom && (cfg.customText || '').trim().length > 0;
+    var light = lum(cfg.bgColor) > 0.5;
+    var W = hasC ? 104 : 124, H = hasC ? 90 : 108, F = hasC ? 72 : 88;
+    var pv = $('preview');
+    pv.style.background = cfg.bgColor;
+    pv.style.gap = hasC ? '8px' : '12px';
+    ['pc1', 'pc2'].forEach(function (id) {
+      var c = $(id);
+      c.style.width = W + 'px'; c.style.height = H + 'px'; c.style.background = cfg.cardColor;
+      var n = c.querySelector('.num'); n.style.fontSize = F + 'px'; n.style.color = cfg.textColor;
+      var sp = c.querySelector('.sp'); sp.style.top = (H / 2 - 1) + 'px'; sp.style.background = cfg.bgColor;
+    });
+    $('pH').textContent = pad(d.getHours());
+    $('pM').textContent = pad(d.getMinutes());
+    var pd = $('pDate');
+    pd.textContent = HARI[d.getDay()] + ' · ' + d.getDate() + ' ' + BULAN[d.getMonth()] + ' ' + d.getFullYear();
+    pd.style.color = light ? '#4A4A4F' : '#9A9AA0';
+    var pc = $('pCustom');
+    pc.style.display = hasC ? '' : 'none';
+    pc.textContent = (cfg.customText || '').trim();
+    pc.style.color = light ? '#1C1C1F' : '#ECEAE4';
+  }
+
+  function send() {
+    var d = cur();
+    if (!d) return;
+    var b = $('sendBtn');
+    b.disabled = true;
+    b.textContent = 'Mengirim…';
+    var body = {
+      textColor: cfg.textColor, cardColor: cfg.cardColor, bgColor: cfg.bgColor, accent: cfg.accent,
+      custom: !!cfg.custom, customText: (cfg.customText || '').substr(0, 60),
+      updatedAt: { '.sv': 'timestamp' }, by: 'remote'
+    };
+    fetch(url(d, 'config'), { method: 'PUT', body: JSON.stringify(body) }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      b.disabled = false;
+      b.classList.add('ok');
+      b.textContent = 'Terkirim ✓';
+      var st = statuses[d.k];
+      var online = st && st.lastSeen && (Date.now() - st.lastSeen < 150000);
+      $('sendMsg').textContent = online ? 'Tablet akan berubah dalam 1–2 detik.' : 'Tersimpan di server. Tablet sedang offline — akan berubah begitu tersambung lagi.';
+      $('sendMsg').className = 'msg';
+    }).catch(function (e) {
+      b.disabled = false;
+      b.classList.add('bad');
+      b.textContent = 'Gagal — coba lagi';
+      $('sendMsg').textContent = 'Tidak bisa mengirim (' + e.message + '). Periksa internet HP ini.';
+      $('sendMsg').className = 'msg err';
+    });
+  }
+
+  // ---- events
+  $('customOn').addEventListener('change', function () { cfg.custom = this.checked; dirty(); });
+  $('customText').addEventListener('input', function () { cfg.customText = this.value.substr(0, 60); dirty(); });
+  $('saveQuick').addEventListener('click', function () {
+    var t = (cfg.customText || '').trim();
+    if (!t || quick.indexOf(t) >= 0) return;
+    quick.push(t); store(QUICK_KEY, quick); renderChips();
+  });
+  $('sendBtn').addEventListener('click', send);
+  $('removeBtn').addEventListener('click', function () {
+    var d = cur(); if (!d) return;
+    if (!confirm('Hapus tablet ini dari daftar di HP ini? (Tablet tidak terpengaruh.)')) return;
+    devices.splice(sel, 1); sel = 0; store(DEV_KEY, devices); store(SEL_KEY, sel);
+    renderDevices(); loadConfig();
+  });
+  $('mAdd').addEventListener('click', function () {
+    var db = clean($('mDb').value), k = $('mKey').value.trim(), n = $('mName').value.trim();
+    if (!/^https:\/\//.test(db)) { alert('Alamat Firebase harus diawali https://'); return; }
+    if (k.length < 20) { alert('Kunci perangkat minimal 20 huruf.'); return; }
+    addDevice(db, k, n || 'Tablet');
+    $('mKey').value = ''; $('manualBox').open = false;
+    renderDevices(); loadConfig(); refreshStatus();
+  });
+
+  buildColors();
+  renderChips();
+  renderDevices();
+  renderEditor();
+  loadConfig();
+  refreshStatus();
+  setInterval(refreshStatus, 20000);
+  setInterval(renderPreview, 15000);
+})();
+</script>
+</body>
+</html>
