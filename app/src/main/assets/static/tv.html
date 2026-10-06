@@ -1,0 +1,814 @@
+<!doctype html>
+<html lang="id" translate="no">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="google" content="notranslate">
+<title>TV Tamu</title>
+<style>
+@font-face{font-family:"Archivo";font-style:normal;font-weight:100 900;font-stretch:62% 125%;font-display:swap;
+  src:url("font/archivo-latin-standard-normal.woff2") format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Archivo";font-style:normal;font-weight:100 900;font-stretch:62% 125%;font-display:swap;
+  src:url("font/archivo-latin-ext-standard-normal.woff2") format("woff2");
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+
+:root{
+  --baja:#12283f;        /* dasar biru baja */
+  --baja-dalam:#0a1826;
+  --kuningan:#d8b25c;    /* aksen: garis dan roda gigi */
+  --kertas:#f6f3ec;      /* teks utama */
+  --abu-baja:#a9b9c9;    /* teks pendamping */
+  --gelap:.45;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--baja-dalam);overflow:hidden;cursor:none}
+body{font-family:"Archivo","DejaVu Sans","Noto Sans","Noto Sans CJK JP",Arial,sans-serif;color:var(--kertas)}
+
+/* Panggung = seluruh layar. Semua ukuran di dalamnya relatif terhadap panggung,
+   jadi tetap pas walau diputar atau ditampilkan kecil di pratinjau. */
+.panggung{position:fixed;inset:0;container-type:size;overflow:hidden;background:var(--baja-dalam)}
+.putar-90 .panggung,.putar-270 .panggung{inset:auto;top:50%;left:50%;width:100vh;height:100vw}
+.putar-90 .panggung{transform:translate(-50%,-50%) rotate(90deg)}
+.putar-270 .panggung{transform:translate(-50%,-50%) rotate(270deg)}
+.putar-180 .panggung{transform:rotate(180deg)}
+
+/* ---------- latar ---------- */
+.latar,.latar>*{position:absolute;inset:0}
+.latar-dasar{background:
+  radial-gradient(120% 80% at 20% 10%, #1b3a58 0%, transparent 60%),
+  linear-gradient(160deg, var(--baja) 0%, var(--baja-dalam) 100%)}
+.latar-media{width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .8s ease}
+.latar-media.tampak{opacity:1}
+.rodagigi{overflow:hidden;opacity:0;transition:opacity .8s ease}
+.rodagigi.tampak{opacity:1}
+.roda{position:absolute;inset:auto;will-change:transform;animation:putar linear infinite}
+.roda svg{display:block;width:100%;height:100%;overflow:visible}
+.roda path,.roda circle,.roda line{fill:none;stroke:var(--kuningan);vector-effect:non-scaling-stroke}
+.roda .badan{stroke-width:1.6;opacity:.34}
+.roda .bantu{stroke-width:1;opacity:.22}
+@keyframes putar{from{rotate:var(--awal)}to{rotate:calc(var(--awal) + 360deg)}}
+/* Dua latar roda gigi: "rodagigi" = sepasang di kanan bawah; "rodasudut" = sepasang di kanan atas, sepasang
+   di kiri bawah, dan bingkai tipis di tepi layar yang digambar setiap kali tulisan berganti. */
+.set-roda{position:absolute;inset:0}
+.set-sudut,.roda-sudut .set-biasa{display:none}
+.roda-sudut .set-sudut{display:block}
+.bingkai{position:absolute;inset:3cqh 4cqw;--tebal:max(1px,.22cqmin)}
+.bingkai i{position:absolute;background:var(--kuningan);opacity:.6;transform:scale(0)}
+.bingkai .b-atas{left:0;top:0;width:100%;height:var(--tebal);transform-origin:left center}
+.bingkai .b-kiri{left:0;top:0;width:var(--tebal);height:100%;transform-origin:center top}
+.bingkai .b-kanan{right:0;top:0;width:var(--tebal);height:100%;transform-origin:center top}
+.bingkai .b-bawah{left:0;bottom:0;width:100%;height:var(--tebal);transform-origin:left center}
+/* garis berangkat dari sudut kiri atas ke dua arah, bertemu di sudut kanan bawah */
+.bingkai.gambar .b-atas{animation:tarik-x 1s cubic-bezier(.45,0,.9,.6) both}
+.bingkai.gambar .b-kiri{animation:tarik-y 1.9s cubic-bezier(.45,0,.75,.75) both}
+.bingkai.gambar .b-kanan{animation:tarik-y 1.7s linear 1s both}
+.bingkai.gambar .b-bawah{animation:tarik-x 1.2s cubic-bezier(.2,.5,.3,1) 1.9s both}
+.bingkai.hemat i{animation:none !important;transform:none;opacity:0;transition:opacity 1.2s ease}
+.bingkai.hemat.gambar i{opacity:.6}
+@keyframes tarik-x{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes tarik-y{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+/* Layar dimatikan dari halaman admin: hitam, lalu semua yang bergerak dihentikan. Halaman tetap terbuka
+   dan tetap melapor ke server, jadi menyalakannya lagi langsung jadi. */
+.padam{position:absolute;inset:0;background:#000;display:none}           /* hitam di belakang gambar */
+.layar-mati .padam{display:block}
+.tabung{position:absolute;inset:0}                                       /* seluruh gambar: latar, tulisan, pamit */
+.layar-padam .tabung{display:none}
+/* Urutan saat dimatikan: (1) tulisan pamit "Silakan matikan TV" di atas gambar yang diredupkan,
+   (2) gambar menciut menjadi garis lalu titik seperti TV tabung dimatikan, (3) hitam. */
+.pamit{position:absolute;inset:0;z-index:15;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3cqmin;
+  padding:8cqmin;text-align:center;background:rgb(3 8 14 / .95);color:#f6f3ec;opacity:0;visibility:hidden;transition:opacity .5s ease,visibility 0s .5s}
+.layar-mati .pamit{opacity:1;visibility:visible;transition:opacity .5s ease}
+.pamit p{font-size:7.4cqmin;font-weight:700;font-stretch:112%;line-height:1.15;letter-spacing:.01em;opacity:0}
+.pamit i{display:block;width:14cqmin;height:.45cqmin;background:#d8b25c;transform:scaleX(0)}
+.layar-mati .pamit p{animation:pamit-naik .9s cubic-bezier(.2,.7,.2,1) .25s both}
+.layar-mati .pamit i{animation:tarik 1s cubic-bezier(.2,.7,.2,1) .6s both}
+@keyframes pamit-naik{from{opacity:0;transform:translateY(2.4cqmin)}to{opacity:1;transform:none}}
+.kilat{position:absolute;inset:0;z-index:16;background:#fff;opacity:0;pointer-events:none}   /* gambar memutih saat menciut */
+.layar-crt .tabung{animation:crt-mati .78s linear both}
+.layar-crt .kilat{animation:crt-kilat .78s linear both}
+@keyframes crt-mati{
+  0%{transform:scale(1,1);animation-timing-function:cubic-bezier(.6,0,.9,.4)}
+  42%{transform:scale(1,.0045);animation-timing-function:cubic-bezier(.5,0,.8,.5)}
+  78%{transform:scale(.006,.0045);animation-timing-function:linear}
+  100%{transform:scale(0,0)}}
+@keyframes crt-kilat{0%{opacity:0}10%{opacity:.18}42%{opacity:1}100%{opacity:1}}
+/* tanpa akselerasi grafis (Pi 3) atau gerak dikurangi: gambar memudar saja */
+.layar-crt.crt-pudar .tabung{animation:crt-pudar .7s ease both}
+.layar-crt.crt-pudar .kilat{animation:none}
+@keyframes crt-pudar{to{opacity:0}}
+.tabung.kembali{animation:crt-nyala .7s ease both}
+@keyframes crt-nyala{from{opacity:0}to{opacity:1}}
+.tirai{position:absolute;inset:0;opacity:0;transition:opacity .6s ease;background:linear-gradient(
+  rgb(6 14 24 / calc(var(--gelap) + .12)) 0%,
+  rgb(6 14 24 / var(--gelap)) 28%,
+  rgb(6 14 24 / var(--gelap)) 68%,
+  rgb(6 14 24 / calc(var(--gelap) + .18)) 100%)}
+.pakai-media .tirai{opacity:1}
+.pakai-media .susunan{text-shadow:0 .2cqmin 1.4cqmin rgb(0 0 0 / .45)}
+
+/* ---------- tema gelap dengan roda gigi garis merah: selain roda gigi sama dengan tema gelap ---------- */
+.tema-gelapmerah .roda path,.tema-gelapmerah .roda circle,.tema-gelapmerah .roda line{stroke:#ff3b30}
+.tema-gelapmerah .roda .badan{opacity:.62}
+.tema-gelapmerah .roda .bantu{opacity:.34}
+.tema-gelapmerah .bingkai i{background:#ff3b30}
+
+/* ---------- tema terang: latar putih, tulisan hitam, roda gigi garis merah ---------- */
+.tema-terang{--kertas:#14181d;--abu-baja:#55606b;--kuningan:#e2231a}
+.tema-terang,.tema-terang body,.tema-terang .panggung{background:#fff}
+.tema-terang .latar-dasar{background:radial-gradient(120% 80% at 20% 10%, #fff 0%, #f4f6f8 100%)}
+.tema-terang .roda .badan{opacity:.55}
+.tema-terang .roda .bantu{opacity:.3}
+.tema-terang .tirai{background:linear-gradient(
+  rgb(255 255 255 / calc(var(--gelap) + .12)) 0%,
+  rgb(255 255 255 / var(--gelap)) 28%,
+  rgb(255 255 255 / var(--gelap)) 68%,
+  rgb(255 255 255 / calc(var(--gelap) + .18)) 100%)}
+.tema-terang.pakai-media .susunan{text-shadow:0 0 1.2cqmin rgb(255 255 255 / .9)}
+/* tema merah muda = tema terang, tetapi roda giginya bidang merah muda pucat tanpa garis */
+.tema-pucat .roda path.badan{fill:#ffdcdc;stroke:none;opacity:1}
+.tema-pucat .roda circle.badan{fill:#fff;stroke:none;opacity:1}
+.tema-pucat .roda svg circle.badan:nth-of-type(1){display:none}     /* lingkaran kaki gigi */
+.tema-pucat .roda .bantu{display:none}
+.tema-pucat .bingkai i{background:#f3b4b4;opacity:1}
+.tema-pucat .bingkai.hemat.gambar i{opacity:1}
+
+/* ---------- susunan ---------- */
+.susunan{position:absolute;inset:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto;
+  padding:6cqh 8cqw 5.5cqh;row-gap:3cqh;text-align:center;justify-items:center}
+.rata-kiri .susunan{text-align:left;justify-items:start}
+
+.atas{width:100%;min-height:6cqmin;display:flex;align-items:flex-start;justify-content:flex-start}
+.logo-tengah .atas{justify-content:center}
+.logo-kanan .atas{justify-content:flex-end}
+.logo{height:calc(16cqmin * var(--u-logo,1));width:auto;max-width:84cqw;object-fit:contain;display:block}
+.logo[hidden]{display:none}
+
+.isi{width:100%;min-height:0;display:flex;flex-direction:column;justify-content:center;overflow:hidden;
+  transition:opacity .35s ease}
+.isi.ganti{opacity:0}
+/* Letak tulisan di ruang tengah: dua pengganjal membagi ruang kosong di atas dan di bawahnya. */
+.isi::before,.isi::after{content:"";flex-shrink:1;flex-basis:0;min-height:0}
+.isi::before{flex-grow:var(--pos-isi,50)}
+.isi::after{flex-grow:calc(100 - var(--pos-isi,50))}
+.isi-dalam{--skala:1;display:flex;flex-direction:column;align-items:center;width:100%;flex:none}
+.rata-kiri .isi-dalam{align-items:flex-start}
+
+/* --u-* = ukuran huruf, --j-* = jarak di atas baris itu; keduanya diatur dari halaman admin */
+.salam{font-size:calc(6.4cqmin * var(--skala) * var(--u-salam,1));font-weight:300;font-stretch:112%;line-height:1.15;
+  letter-spacing:.01em;color:var(--kertas)}
+.salam[hidden]{display:none}
+.garis{width:calc(16cqmin * var(--skala) * var(--u-garis,1));height:max(2px,calc(.55cqmin * var(--skala) * var(--u-garis,1)));
+  background:var(--kuningan);margin:calc(3.4cqmin * var(--skala) * var(--j-garis,1)) 0 0;transform-origin:center;border-radius:1px}
+.rata-kiri .garis{transform-origin:left}
+.isi.masuk .garis{animation:tarik .9s cubic-bezier(.2,.7,.2,1) both}
+@keyframes tarik{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+.tamu-wadah{width:100%;display:grid;margin-top:calc(4cqmin * var(--skala) * var(--j-nama,1));
+  row-gap:calc(4.2cqmin * var(--skala) * var(--j-nama,1))}
+.tamu-wadah.gantian{row-gap:0}
+.tamu-wadah.gantian .tamu{grid-area:1/1;opacity:0;transition:opacity .7s ease;align-self:center}
+.tamu-wadah.gantian .tamu.aktif{opacity:1}
+.nama{font-size:calc(var(--nama) * var(--skala) * var(--u-nama,1));font-weight:800;line-height:1.04;letter-spacing:-.012em;
+  text-wrap:balance;hyphens:none}
+.rapat .nama{font-stretch:76%;letter-spacing:0}
+.instansi{font-size:calc(var(--instansi) * var(--skala) * var(--u-instansi,1));font-weight:400;line-height:1.2;color:var(--abu-baja);
+  margin-top:calc(var(--instansi) * .42 * var(--skala) * var(--j-instansi,1));text-wrap:balance}
+.pakai-media .instansi{color:var(--kertas);opacity:.88}
+.j1{--nama:14.5cqmin;--instansi:5cqmin}
+.j2{--nama:10.5cqmin;--instansi:4cqmin}
+.j3{--nama:8.2cqmin;--instansi:3.4cqmin}
+.j5{--nama:6.2cqmin;--instansi:2.8cqmin}
+.pesan{font-size:calc(3.7cqmin * var(--skala) * var(--u-pesan,1));font-weight:400;line-height:1.4;white-space:pre-line;
+  max-width:34em;margin-top:calc(6cqmin * var(--skala) * var(--j-pesan,1));text-wrap:pretty}
+.pesan:empty{display:none}
+
+/* ---------- tulisan berurutan ("Urutan sendiri") ----------
+   Tulisan dari admin muncul dan hilang bergantian menurut waktu. Tiap urutan menempati satu .kotak yang
+   hampir memenuhi layar; letak tulisannya di dalam kotak diatur dengan "Posisi" (0 = atas, 100 = bawah). */
+.ikut{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.ikut[hidden]{display:none}
+.urutan-sendiri .isi{visibility:hidden}
+.ikut-bingkai{position:absolute;inset:0;container-type:size;
+  /* warna mengikuti tema, seperti susunan biasa */
+  --w-utama:var(--kertas);--w-kedua:var(--abu-baja);--w-garis:var(--kuningan);--w-bayang:none}
+.pakai-media .ikut-bingkai{--w-kedua:var(--kertas);--w-bayang:0 .2cqmin 1.4cqmin rgb(0 0 0 / .45)}
+.tema-terang.pakai-media .ikut-bingkai{--w-bayang:0 0 1.2cqmin rgb(255 255 255 / .9)}
+.kotak{position:absolute;left:6%;top:3%;width:88%;height:94%;display:flex;flex-direction:column;align-items:center;overflow:hidden;
+  text-align:center;color:var(--w-utama);text-shadow:var(--w-bayang)}
+.kotak::before,.kotak::after{content:"";flex-shrink:1;flex-basis:0;min-height:0}
+.kotak::before{flex-grow:var(--pos,50)}
+.kotak::after{flex-grow:calc(100 - var(--pos,50))}
+.kotak-isi{--skala:1;--besar:1;flex:none;width:100%;display:flex;flex-direction:column;align-items:center}
+/* tiap baris masuk bergantian (naik sedikit sambil menebal), keluar bersamaan */
+.kotak .b{opacity:0;transform:translateY(1.6cqw);transition:opacity .45s ease,transform .45s ease}
+.kotak.tampak .b{opacity:1;transform:none;
+  transition:opacity .8s ease var(--tunda,0s),transform .9s cubic-bezier(.2,.7,.2,1) var(--tunda,0s)}
+.i-salam{font-size:calc(6.2cqw * var(--skala) * var(--besar) * var(--u-salam,1));font-weight:500;font-stretch:108%;letter-spacing:.04em;
+  line-height:1.15;text-transform:uppercase}
+.i-salam + .i-tamu,.i-salam + .i-pesan{margin-top:calc(5cqw * var(--skala) * var(--besar) * var(--j-nama,1))}
+.i-tamu{width:100%;margin-top:calc(var(--sela) * var(--skala) * var(--besar) * var(--j-nama,1))}
+.i-tamu:first-child{margin-top:0}
+.i-nama{font-size:calc(var(--n) * var(--skala) * var(--besar) * var(--u-nama,1));font-weight:800;line-height:1.06;letter-spacing:-.01em;
+  text-wrap:balance;hyphens:none}
+.rapat .i-nama,.rapat .i-teks{font-stretch:76%;letter-spacing:0}
+.i-instansi{font-size:calc(var(--i) * var(--skala) * var(--besar) * var(--u-instansi,1));font-weight:600;line-height:1.2;color:var(--w-kedua);
+  margin-top:calc(var(--i) * .34 * var(--skala) * var(--besar) * var(--j-instansi,1));text-wrap:balance}
+.i-garis{width:calc(14cqw * var(--skala) * var(--besar) * var(--u-garis,1));height:max(2px,calc(.5cqw * var(--skala) * var(--besar) * var(--u-garis,1)));
+  background:var(--w-garis);border-radius:1px;margin-top:calc(4cqw * var(--skala) * var(--besar) * var(--j-garis,1))}
+.i-pesan{font-size:calc(3.5cqw * var(--skala) * var(--besar) * var(--u-pesan,1));font-weight:500;line-height:1.4;white-space:pre-line;
+  max-width:30em;margin-top:calc(3.4cqw * var(--skala) * var(--besar) * var(--j-pesan,1));text-wrap:pretty}
+.i-pesan.sendiri{font-size:calc(5.4cqw * var(--skala) * var(--besar) * var(--u-pesan,1));margin-top:0}
+.i-teks{font-size:calc(8cqw * var(--skala) * var(--besar));font-weight:800;line-height:1.1;white-space:pre-line;text-wrap:balance}
+.t1{--n:10.4cqw;--i:4.4cqw;--sela:0cqw}
+.t2{--n:8.2cqw;--i:3.7cqw;--sela:5cqw}
+.t3{--n:6.6cqw;--i:3.1cqw;--sela:4cqw}
+.t5{--n:5.2cqw;--i:2.6cqw;--sela:3cqw}
+
+/* ---------- warna tulisan pilihan ----------
+   "Warna tulisan" di pengaturan layar menimpa warna tema untuk semua tulisan (kelas warna-* di akar halaman).
+   Tiap urutan juga bisa punya warnanya sendiri (kelas w-* di kotaknya), yang menang atas keduanya. */
+.warna-hitam{--kertas:#101317;--abu-baja:#101317}
+.warna-putih{--kertas:#fff;--abu-baja:#fff}
+.warna-merah{--kertas:#d8100f;--abu-baja:#d8100f}
+/* !important: pilihan warna ini memang dimaksudkan mengalahkan aturan tema di atas */
+.warna-hitam .ikut-bingkai,.warna-putih .ikut-bingkai,.warna-merah .ikut-bingkai{
+  --w-utama:var(--kertas) !important;--w-kedua:var(--kertas) !important;--w-garis:var(--kertas) !important}
+.warna-hitam .susunan,.warna-merah .susunan{text-shadow:0 0 .8cqmin rgb(255 255 255 / .8) !important}
+.warna-hitam .ikut-bingkai,.warna-merah .ikut-bingkai{--w-bayang:0 0 .8cqmin rgb(255 255 255 / .8) !important}
+.warna-putih .susunan{text-shadow:0 .2cqmin 1.4cqmin rgb(0 0 0 / .6), 0 0 .4cqmin rgb(0 0 0 / .5) !important}
+.warna-putih .ikut-bingkai{--w-bayang:0 .2cqmin 1.4cqmin rgb(0 0 0 / .6), 0 0 .4cqmin rgb(0 0 0 / .5) !important}
+.kotak.w-hitam{--w-utama:#101317;--w-kedua:#101317;--w-garis:#101317;--w-bayang:0 0 .8cqmin rgb(255 255 255 / .8)}
+.kotak.w-merah{--w-utama:#d8100f;--w-kedua:#d8100f;--w-garis:#d8100f;--w-bayang:0 0 .8cqmin rgb(255 255 255 / .8)}
+.kotak.w-putih{--w-utama:#fff;--w-kedua:#fff;--w-garis:#fff;--w-bayang:0 .2cqmin 1.4cqmin rgb(0 0 0 / .6), 0 0 .4cqmin rgb(0 0 0 / .5)}
+
+.bawah{width:100%;display:flex;flex-direction:column;align-items:center;gap:.6cqmin}
+.rata-kiri .bawah{flex-direction:row;align-items:flex-end;justify-content:space-between;gap:4cqw}
+.waktu[hidden]{display:none}
+.jam{font-size:calc(9cqmin * var(--u-jam,1));font-weight:300;font-stretch:100%;line-height:1;font-variant-numeric:tabular-nums}
+.tanggal{font-size:calc(3cqmin * var(--u-tanggal,1));font-weight:400;color:var(--abu-baja);margin-top:calc(1cqmin * var(--j-tanggal,1))}
+.pakai-media .tanggal,.pakai-media .perusahaan{color:var(--kertas);opacity:.85}
+.perusahaan{font-size:calc(2.7cqmin * var(--u-perusahaan,1));font-weight:600;font-stretch:112%;letter-spacing:.02em;color:var(--abu-baja);
+  margin-top:calc(2.2cqmin * var(--j-perusahaan,1))}
+.rata-kiri .perusahaan{margin-top:0;text-align:right}
+.perusahaan:empty{display:none}
+
+/* kotak kecil saat uji kelancaran (hanya muncul ketika skrip percobaan menyalakannya) */
+.ukur{position:absolute;right:2cqmin;top:2cqmin;z-index:5;padding:1cqmin 1.6cqmin;border-radius:.8cqmin;background:rgb(0 0 0 / .78);
+  color:#fff;font-size:2.6cqmin;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.35;text-align:right}
+.ukur[hidden]{display:none}
+
+@media (prefers-reduced-motion:reduce){
+  .roda{animation:none;rotate:var(--awal)}
+  .bingkai i,.bingkai.gambar i{animation:none !important;transform:none}
+  .layar-crt .tabung{animation:crt-pudar .7s ease both}
+  .layar-crt .kilat{animation:none}
+  .isi.masuk .garis{animation:none}
+  .kotak .b,.kotak.tampak .b{transition:opacity .4s ease;transform:none}
+}
+</style>
+</head>
+<body>
+<div class="panggung" id="panggung">
+  <div class="padam"></div>
+  <div class="tabung" id="tabung">
+  <div class="latar">
+    <div class="latar-dasar"></div>
+    <div class="rodagigi" id="rodagigi"></div>
+    <img class="latar-media" id="foto" alt="">
+    <video class="latar-media" id="video" muted loop playsinline preload="auto"></video>
+  </div>
+  <div class="tirai"></div>
+  <div class="ikut" id="ikut" hidden><div class="ikut-bingkai" id="ikut-bingkai"></div></div>
+  <div class="susunan">
+    <header class="atas"><img class="logo" id="logo" alt="" hidden></header>
+    <main class="isi" id="isi">
+      <div class="isi-dalam" id="isi-dalam">
+        <p class="salam" id="salam"></p>
+        <div class="garis"></div>
+        <div class="tamu-wadah" id="wadah"></div>
+        <p class="pesan" id="pesan"></p>
+      </div>
+    </main>
+    <footer class="bawah">
+      <div class="waktu" id="waktu">
+        <div class="jam" id="jam"></div>
+        <div class="tanggal" id="tanggal"></div>
+      </div>
+      <div class="perusahaan" id="perusahaan"></div>
+    </footer>
+  </div>
+  <div class="pamit"><p>Silakan matikan TV</p><i></i></div>
+  <div class="kilat"></div>
+  </div>
+  <div class="ukur" id="ukur" hidden></div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var DEMO = location.protocol === "file:";
+var PRATINJAU = /[?&]pratinjau=1/.test(location.search);
+var HEMAT = /[?&]hemat=1/.test(location.search);    /* browser tanpa akselerasi grafis (Pi 3 ke bawah) */
+var KUNCI_DEMO = "tvtamu-demo";
+var BAWAAN = {mode:"standby",salam:"Selamat Datang",tamu:[],cara_tampil:"baris",pesan:"",
+  perusahaan:"PT Asano Gear Indonesia",standby_judul:"Selamat Datang",standby_teks:"",
+  latar:{jenis:"rodagigi",file:""},gelap:45,perataan:"tengah",jam:true,putar:90,logo:"",logo_ukuran:100,
+  logo_posisi:"kiri",gaya:{},posisi_isi:50,roda_kecepatan:100,layar:"nyala",layar_tv:false,tema:"gelap",tata_teks:"biasa",warna_teks:"tema",
+  urutan:[{isi:"salam",teks:"",ukuran:100,posisi:50,lama:4,warna:"ikut"},{isi:"tamu",teks:"",ukuran:100,posisi:50,lama:8,warna:"ikut"},
+          {isi:"pesan",teks:"",ukuran:100,posisi:50,lama:4,warna:"ikut"}],rev:0};
+var GAYA_KUNCI = ["salam","garis","nama","instansi","pesan","jam","tanggal","perusahaan"];
+
+var el = function(id){ return document.getElementById(id); };
+var akar = document.documentElement;
+var isi = el("isi"), dalam = el("isi-dalam"), wadah = el("wadah");
+var sekarang = null, tandaIsi = "", tandaLatar = "", versi = null, timerGilir = null, timerGanti = null, tataSudut = false, layarMati = false, timerPadam = null, timerCrt = null;
+var LAMA_PAMIT = 4500;       /* milidetik tulisan "Silakan matikan TV" tampil sebelum gambar menciut */
+
+/* ---------- roda gigi (latar bawaan) ---------- */
+function jalurRoda(n, R){
+  var m = 2 * R / n, Ra = R + m, Rr = R - 1.25 * m, p = 2 * Math.PI / n, d = "";
+  var titik = function(r, a){ return (r * Math.cos(a)).toFixed(2) + " " + (r * Math.sin(a)).toFixed(2); };
+  for (var i = 0; i < n; i++){
+    var c = i * p;
+    d += (i ? "L" : "M") + titik(Rr, c - .5 * p) + "L" + titik(Rr, c - .29 * p) + "L" + titik(Ra, c - .15 * p)
+       + "L" + titik(Ra, c + .15 * p) + "L" + titik(Rr, c + .29 * p);
+  }
+  return {d: d + "Z", Ra: Ra, Rr: Rr};
+}
+function buatRoda(n, R, lubang){
+  var g = jalurRoda(n, R), s = g.Ra + 4, svg = "";
+  svg += '<svg viewBox="' + (-s) + " " + (-s) + " " + (2 * s) + " " + (2 * s) + '" aria-hidden="true">';
+  svg += '<path class="badan" d="' + g.d + '"/>';
+  svg += '<circle class="badan" r="' + (g.Rr * .86).toFixed(2) + '"/>';
+  svg += '<circle class="badan" r="' + (R * .2).toFixed(2) + '"/><circle class="badan" r="' + (R * .11).toFixed(2) + '"/>';
+  for (var i = 0; i < lubang; i++){
+    var a = i * 2 * Math.PI / lubang + Math.PI / lubang;
+    svg += '<circle class="badan" cx="' + (R * .52 * Math.cos(a)).toFixed(2) + '" cy="' + (R * .52 * Math.sin(a)).toFixed(2)
+        + '" r="' + (R * (lubang > 5 ? .15 : .17)).toFixed(2) + '"/>';
+  }
+  /* lingkaran jarak bagi dan garis sumbu, seperti di gambar teknik */
+  svg += '<circle class="bantu" r="' + R + '" stroke-dasharray="14 5 2 5"/>';
+  svg += '<line class="bantu" x1="' + (-s) + '" y1="0" x2="' + s + '" y2="0" stroke-dasharray="14 5 2 5"/>';
+  svg += '<line class="bantu" x1="0" y1="' + (-s) + '" x2="0" y2="' + s + '" stroke-dasharray="14 5 2 5"/>';
+  return {svg: svg + "</svg>", s: s};
+}
+/* Sepasang roda yang saling bertaut. Modul (ukuran gigi) semua roda sama: roda 30 gigi berjari-jari 100 unit,
+   dan satu putarannya 240 detik; roda lain mengikuti jumlah giginya. "arah" = letak roda kedua dari roda pertama. */
+function pasangPasangan(kotak, n1, n2, lubang1, lubang2, satuan, cx1, cy1, arah){
+  var R1 = 100 * n1 / 30, R2 = 100 * n2 / 30, jarak = (R1 + R2) * satuan;   /* 1 unit = "satuan" cqmin */
+  var dx = jarak * Math.cos(arah * Math.PI / 180), dy = jarak * Math.sin(arah * Math.PI / 180);
+  var a = buatRoda(n1, R1, lubang1), b = buatRoda(n2, R2, lubang2), T = 240 * n1 / 30;
+  var buat = function(roda, cx, cy, awal, durasi, balik){
+    var d = document.createElement("div"), sisi = 2 * roda.s * satuan;
+    d.className = "roda";
+    d.style.width = d.style.height = sisi + "cqmin";
+    d.style.left = "calc(" + cx + " - " + sisi / 2 + "cqmin)";
+    d.style.top = "calc(" + cy + " - " + sisi / 2 + "cqmin)";
+    d.style.setProperty("--awal", awal + "deg");
+    d.dataset.durasi = durasi;
+    if (balik) d.style.animationDirection = "reverse";
+
+    d.innerHTML = roda.svg;
+    kotak.appendChild(d);
+  };
+  buat(a, cx1, cy1, arah, T, false);
+  buat(b, "calc(" + cx1 + " + " + dx.toFixed(3) + "cqmin)", "calc(" + cy1 + " + " + dy.toFixed(3) + "cqmin)",
+       arah + 180 + 180 / n2, T * n2 / n1, true);
+}
+function pasangRoda(){
+  var kotak = el("rodagigi"), set = function(nama){
+    var d = document.createElement("div"); d.className = "set-roda set-" + nama; kotak.appendChild(d); return d;
+  };
+  /* biasa: 30 gigi dan 18 gigi di kanan bawah, roda kecil di kiri atas roda besar */
+  pasangPasangan(set("biasa"), 30, 18, 6, 4, .5, "90cqw", "95cqh", -145);
+  /* sudut: kanan atas dan kiri bawah, sebagian di luar layar; yang satu cerminan yang lain */
+  var sudut = set("sudut");
+  pasangPasangan(sudut, 18, 11, 5, 3, .42, "calc(100cqw - 13cqmin)", "1.5cqmin", 52);
+  pasangPasangan(sudut, 18, 11, 5, 3, .42, "13cqmin", "calc(100cqh - 1.5cqmin)", 232);
+  var b = document.createElement("div");
+  b.className = "bingkai" + (HEMAT ? " hemat" : ""); b.id = "bingkai";
+  b.innerHTML = '<i class="b-atas"></i><i class="b-kiri"></i><i class="b-kanan"></i><i class="b-bawah"></i>';
+  sudut.appendChild(b);
+}
+/* Menggambar ulang bingkai dari sudut kiri atas (dipanggil saat tulisan di layar berganti). */
+function gambarBingkai(){
+  var b = el("bingkai");
+  if (!b) return;
+  b.classList.remove("gambar"); void b.offsetWidth; b.classList.add("gambar");
+}
+
+/* Kecepatan putaran (persen). Kedua roda memakai faktor yang sama, jadi giginya tetap bertaut. */
+function aturKecepatan(persen){
+  var f = Math.max(0, Math.min(400, isNaN(persen) ? 100 : persen)) / 100;
+  var roda = document.querySelectorAll(".roda");
+  for (var i = 0; i < roda.length; i++){
+    var d = roda[i], dasar = parseFloat(d.dataset.durasi);
+    if (f === 0){            /* berhenti di tempat; durasi tetap ada supaya sudut awal (gigi bertaut) terpakai */
+      if (!d.style.animationDuration) d.style.animationDuration = dasar + "s";
+      d.style.animationPlayState = "paused";
+      continue;
+    }
+    var durasi = dasar / f;
+    d.style.animationDuration = durasi.toFixed(2) + "s";
+    d.style.animationPlayState = "running";
+    /* Mode hemat (tanpa akselerasi grafis): gerak dibuat bertahap, 6 langkah per detik dan
+       paling banyak 15 saat dipercepat, supaya prosesor tidak terus bekerja 60 kali per detik. */
+    d.style.animationTimingFunction = HEMAT ? "steps(" + Math.max(1, Math.round(durasi * Math.min(15, 6 * Math.max(1, f)))) + ")" : "linear";
+  }
+}
+
+/* ---------- jam ---------- */
+var HARI = ["Minggu","Senin","Selasa","Rabu","Kamis","Jumat","Sabtu"];
+var BULAN = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+function detak(){
+  var t = new Date(), dua = function(n){ return (n < 10 ? "0" : "") + n; };
+  var j = dua(t.getHours()) + ":" + dua(t.getMinutes());
+  if (el("jam").textContent !== j) el("jam").textContent = j;
+  var tg = HARI[t.getDay()] + ", " + t.getDate() + " " + BULAN[t.getMonth()] + " " + t.getFullYear();
+  if (el("tanggal").textContent !== tg) el("tanggal").textContent = tg;
+}
+
+/* ---------- isi ---------- */
+function adaTamu(s){ return s.mode === "tamu" && s.tamu && s.tamu.length > 0; }
+
+function tulisIsi(s){
+  var tamu = adaTamu(s);
+  var daftar = tamu ? s.tamu : [{nama: s.standby_judul || "Selamat Datang", instansi: s.perusahaan}];
+  var gantian = tamu && s.cara_tampil === "gantian" && daftar.length > 1;
+  var jumlah = gantian ? 1 : daftar.length;
+
+  el("salam").textContent = tamu ? s.salam : "";
+  el("salam").hidden = !el("salam").textContent;
+  wadah.className = "tamu-wadah " + (gantian ? "gantian " : "baris ")
+    + (jumlah === 1 ? "j1" : jumlah === 2 ? "j2" : jumlah <= 4 ? "j3" : "j5");
+  wadah.textContent = "";
+  daftar.forEach(function(t, i){
+    var kotak = document.createElement("div"), nama = document.createElement("div");
+    kotak.className = "tamu" + (i === 0 ? " aktif" : "");
+    nama.className = "nama";
+    nama.textContent = t.nama || t.instansi;
+    kotak.appendChild(nama);
+    if (t.nama && t.instansi){
+      var inst = document.createElement("div");
+      inst.className = "instansi";
+      inst.textContent = t.instansi;
+      kotak.appendChild(inst);
+    }
+    wadah.appendChild(kotak);
+  });
+  el("pesan").textContent = tamu ? s.pesan : s.standby_teks;
+  el("perusahaan").textContent = tamu ? s.perusahaan : "";
+
+  clearInterval(timerGilir);
+  if (gantian){
+    var giliran = 0, semua = wadah.children;
+    timerGilir = setInterval(function(){
+      semua[giliran].classList.remove("aktif");
+      giliran = (giliran + 1) % semua.length;
+      semua[giliran].classList.add("aktif");
+    }, 7000);
+  }
+}
+
+/* Kecilkan huruf sampai semua muat: tidak terpotong, nama paling banyak 2-3 baris. */
+function muat(maksBaris){
+  if (dalam.offsetHeight > isi.clientHeight + 1) return false;
+  var nama = wadah.querySelectorAll(".nama");
+  for (var i = 0; i < nama.length; i++){
+    var n = nama[i];
+    if (n.scrollWidth > n.clientWidth + 1) return false;
+    var tinggiBaris = parseFloat(getComputedStyle(n).lineHeight);
+    if (tinggiBaris && Math.round(n.offsetHeight / tinggiBaris) > maksBaris) return false;
+  }
+  return true;
+}
+function cariSkala(maksBaris){
+  var s = 1;
+  for (var i = 0; i < 45; i++){
+    dalam.style.setProperty("--skala", s.toFixed(3));
+    if (muat(maksBaris)) break;
+    s *= .95;
+  }
+  return s;
+}
+function pas(){
+  if (!sekarang) return;
+  var maksBaris = wadah.children.length === 1 || wadah.classList.contains("gantian") ? 3 : 2;
+  dalam.classList.remove("rapat");
+  if (cariSkala(maksBaris) < .74){       /* nama panjang: pakai huruf lebih ramping dulu, baru dikecilkan */
+    dalam.classList.add("rapat");
+    cariSkala(maksBaris);
+  }
+}
+
+/* ---------- latar ---------- */
+function pasangLatar(s){
+  var foto = el("foto"), video = el("video"), roda = el("rodagigi");
+  var lt = s.latar || {}, jenis = lt.jenis, url = "";
+  if (jenis === "file" && lt.file && !DEMO){
+    url = "/media/" + encodeURIComponent(lt.file);
+  } else if (jenis === "file"){
+    jenis = "rodagigi";
+  }
+  var videoKah = /\.(mp4|webm|m4v)$/i.test(lt.file || "");
+  var mundur = function(){               /* berkas hilang atau tidak bisa diputar */
+    foto.classList.remove("tampak"); video.classList.remove("tampak");
+    roda.classList.add("tampak"); akar.classList.remove("pakai-media");
+  };
+  roda.classList.toggle("tampak", jenis === "rodagigi" || jenis === "rodasudut");
+  tataSudut = jenis === "rodasudut";
+  akar.classList.toggle("roda-sudut", tataSudut);
+  if (tataSudut) gambarBingkai();
+  akar.classList.toggle("pakai-media", jenis === "file");
+  if (jenis === "file" && videoKah){
+    foto.classList.remove("tampak");
+    video.onerror = mundur;
+    video.oncanplay = function(){ video.classList.add("tampak"); };
+    video.src = url;
+    video.muted = true;
+    var janji = video.play();
+    if (janji && janji.catch) janji.catch(function(){});
+  } else {
+    video.classList.remove("tampak");
+    if (video.getAttribute("src")){ video.pause(); video.removeAttribute("src"); video.load(); }
+    if (jenis === "file"){
+      foto.onerror = mundur;
+      foto.onload = function(){ foto.classList.add("tampak"); };
+      foto.src = url;
+    } else {
+      foto.classList.remove("tampak");
+    }
+  }
+}
+
+/* ---------- tulisan berurutan ("Urutan sendiri") ----------
+   Daftar urutan disusun di halaman admin: isi, ukuran huruf, lama tampil, posisi, dan warna. Urutan tampil
+   bergantian lalu berulang. Kalau latarnya video, hitungan waktunya mengikuti detik video, sehingga tiap
+   tulisan selalu muncul di adegan yang sama. */
+var ikut = {aktif: null, giliran: 0, tLalu: -1, tanda: "", kotak: [], mulai: 0, urutan: null, tandaUrutan: ""};
+
+/* Menyusun kotak-kotak dari daftar urutan. Susunannya disimpan supaya tidak dibuat ulang tiap saat. */
+function susunanUrutan(s){
+  var tanda = JSON.stringify(s.urutan || []);
+  if (tanda === ikut.tandaUrutan) return ikut.urutan;
+  var kotak = [], t = 0;
+  (s.urutan || []).forEach(function(u){
+    var lama = Math.max(.5, Math.min(600, +u.lama || 5));
+    if (u.isi !== "kosong"){
+      kotak.push({isi: u.isi, teks: u.teks || "", besar: Math.max(40, Math.min(250, +u.ukuran || 100)) / 100,
+        pos: Math.max(0, Math.min(100, u.posisi === undefined ? 50 : +u.posisi)),
+        warna: u.warna === "hitam" || u.warna === "putih" || u.warna === "merah" ? u.warna : "",
+        waktu: [t, t + lama - Math.min(.45, lama * .3)]});            /* hilang sedikit lebih awal, supaya tidak menumpuk dengan berikutnya */
+    }
+    t += lama;
+  });
+  ikut.tandaUrutan = tanda;
+  ikut.urutan = t > 0 ? {durasi: t, kotak: kotak} : null;
+  return ikut.urutan;
+}
+function susunanDipakai(s){
+  return s.tata_teks === "urutan" ? susunanUrutan(s) : null;
+}
+/* Detik yang sedang berjalan di dalam satu putaran urutan. */
+function waktuIkut(su){
+  var v = el("video");
+  if (v.classList.contains("tampak") && isFinite(v.duration)) return v.currentTime % su.durasi;   /* latar video: seiring detik video */
+  return ((performance.now() - ikut.mulai) / 1000) % su.durasi;                                   /* latar lain: memakai jam sendiri */
+}
+function barisIkut(kelas, teks){
+  var d = document.createElement("div");
+  d.className = "b " + kelas;
+  if (teks !== undefined) d.textContent = teks;
+  return d;
+}
+function tulisIkut(s){
+  var su = ikut.aktif, bingkai = el("ikut-bingkai");
+  var tamu = adaTamu(s), daftar = tamu ? s.tamu : [{nama: s.standby_judul || "Selamat Datang", instansi: ""}];
+  if (tamu && s.cara_tampil === "gantian" && daftar.length > 1) daftar = [daftar[ikut.giliran % daftar.length]];
+  var ukuran = daftar.length === 1 ? "t1" : daftar.length === 2 ? "t2" : daftar.length <= 4 ? "t3" : "t5";
+  var pesan = tamu ? s.pesan : s.standby_teks;
+  bingkai.textContent = "";
+  ikut.kotak = su.kotak.map(function(k){
+    var kotak = document.createElement("div"), dalamKotak = document.createElement("div"), baris = [];
+    kotak.className = "kotak" + (k.warna ? " w-" + k.warna : ""); dalamKotak.className = "kotak-isi " + ukuran;
+    kotak.style.setProperty("--pos", k.pos);
+    dalamKotak.style.setProperty("--besar", k.besar);
+    var tambah = function(b, induk){ (induk || dalamKotak).appendChild(b); baris.push(b); };
+    if ((k.isi === "salam" || k.isi === "semua") && tamu && s.salam) tambah(barisIkut("i-salam", s.salam));
+    if (k.isi === "tamu" || k.isi === "nama" || k.isi === "semua" || k.isi === "tamupesan") daftar.forEach(function(t){
+      var w = document.createElement("div"); w.className = "i-tamu";
+      dalamKotak.appendChild(w);
+      tambah(barisIkut("i-nama", t.nama || t.instansi), w);
+      if (t.nama && t.instansi && k.isi !== "nama") tambah(barisIkut("i-instansi", t.instansi), w);
+    });
+    if ((k.isi === "semua" || k.isi === "tamupesan") && pesan){ tambah(barisIkut("i-garis")); tambah(barisIkut("i-pesan", pesan)); }
+    if (k.isi === "pesan" && pesan) tambah(barisIkut("i-pesan sendiri", pesan));
+    if (k.isi === "teks" && k.teks) tambah(barisIkut("i-teks", k.teks));
+    var sela = Math.min(.2, 1.3 / Math.max(1, baris.length));              /* baris masuk bergantian, paling lama 1,3 detik */
+    baris.forEach(function(b, i){ b.style.setProperty("--tunda", (i * sela).toFixed(2) + "s"); });
+    kotak.appendChild(dalamKotak); bingkai.appendChild(kotak);
+    return {el: kotak, isi: dalamKotak, waktu: k.waktu, tampak: false};
+  });
+  pasIkut();
+  detakIkut();
+}
+/* Kecilkan huruf di tiap kotak sampai semua barisnya muat. */
+function pasIkut(){
+  ikut.kotak.forEach(function(k){
+    var muatKotak = function(){
+      if (k.isi.offsetHeight > k.el.clientHeight + 1) return false;
+      var nama = k.isi.querySelectorAll(".i-nama,.i-salam,.i-teks");
+      for (var i = 0; i < nama.length; i++) if (nama[i].scrollWidth > nama[i].clientWidth + 1) return false;
+      return true;
+    };
+    var cari = function(){
+      var sk = 1;
+      for (var i = 0; i < 45; i++){ k.isi.style.setProperty("--skala", sk.toFixed(3)); if (muatKotak()) break; sk *= .95; }
+      return sk;
+    };
+    k.isi.classList.remove("rapat");
+    if (cari() < .74){ k.isi.classList.add("rapat"); cari(); }
+  });
+}
+/* Dipanggil 10 kali per detik: menampilkan atau menyembunyikan tiap kotak sesuai detik yang sedang berjalan. */
+function detakIkut(){
+  if (!ikut.aktif) return;
+  var t = waktuIkut(ikut.aktif);
+  ikut.kotak.forEach(function(k){
+    var tampak = t >= k.waktu[0] && t < k.waktu[1];
+    if (tampak !== k.tampak){ k.tampak = tampak; k.el.classList.toggle("tampak", tampak); }
+  });
+  var lalu = ikut.tLalu;
+  ikut.tLalu = t;                 /* dicatat dulu, karena tulisIkut() memanggil fungsi ini lagi */
+  /* tamu bergantian: ganti ke tamu berikutnya tiap kali putaran kembali ke awal */
+  if (lalu >= 0 && t < lalu - .5 && sekarang && adaTamu(sekarang) && sekarang.cara_tampil === "gantian" && sekarang.tamu.length > 1){
+    ikut.giliran = (ikut.giliran + 1) % sekarang.tamu.length;
+    tulisIkut(sekarang);
+  }
+}
+function aturIkut(){
+  if (!sekarang) return;
+  var su = susunanDipakai(sekarang);
+  var tanda = su ? JSON.stringify([sekarang.mode, sekarang.salam, sekarang.tamu, sekarang.cara_tampil,
+                                   sekarang.pesan, sekarang.standby_judul, sekarang.standby_teks]) : "";
+  if (su !== ikut.aktif){
+    ikut.aktif = su; ikut.giliran = 0; ikut.tLalu = -1; ikut.tanda = ""; ikut.mulai = performance.now();
+    akar.classList.toggle("urutan-sendiri", !!su);
+    el("ikut").hidden = !su;
+    if (!su){ el("ikut-bingkai").textContent = ""; ikut.kotak = []; pas(); }
+  }
+  if (!su) return;
+  if (tanda !== ikut.tanda){ ikut.tanda = tanda; tulisIkut(sekarang); }
+  else pasIkut();
+}
+setInterval(function(){ if (sekarang){ if (susunanDipakai(sekarang) !== ikut.aktif) aturIkut(); detakIkut(); } }, 100);
+
+/* ---------- terapkan keadaan ---------- */
+function terapkan(s){
+  sekarang = s;
+  var putar = PRATINJAU ? 0 : (s.putar || 0);
+  var posLogo = s.logo_posisi === "tengah" || s.logo_posisi === "kanan" ? s.logo_posisi : "kiri";
+  var terang = s.tema === "terang" || s.tema === "pucat";
+  akar.className = akar.className.replace(/\b(putar-\d+|rata-\w+|logo-\w+|tema-\w+|warna-\w+)\b/g, "").replace(/\s+/g, " ").trim()
+    + " putar-" + putar + " rata-" + (s.perataan === "kiri" ? "kiri" : "tengah") + " logo-" + posLogo
+    + " tema-" + (terang ? "terang" : "gelap") + (s.tema === "pucat" ? " tema-pucat" : s.tema === "gelapmerah" ? " tema-gelapmerah" : "")
+    + (s.warna_teks === "hitam" || s.warna_teks === "putih" || s.warna_teks === "merah" ? " warna-" + s.warna_teks : "");
+  var persen = function(v, bawah, atas){ v = parseInt(v, 10); return (isNaN(v) ? 100 : Math.max(bawah, Math.min(atas, v))) / 100; };
+  var gaya = s.gaya || {};
+  GAYA_KUNCI.forEach(function(k){
+    var g = gaya[k] || {};
+    akar.style.setProperty("--u-" + k, persen(g.u, 40, 250));
+    akar.style.setProperty("--j-" + k, persen(g.j, 0, 400));
+  });
+  akar.style.setProperty("--u-logo", persen(s.logo_ukuran, 40, 250));
+  var pos = parseInt(s.posisi_isi, 10);
+  akar.style.setProperty("--pos-isi", isNaN(pos) ? 50 : Math.max(0, Math.min(100, pos)));
+  aturKecepatan(parseInt(s.roda_kecepatan, 10));
+  akar.style.setProperty("--gelap", (Math.max(0, Math.min(85, s.gelap)) / 100).toFixed(2));
+  el("waktu").hidden = !s.jam;
+
+  var logo = el("logo");
+  if (s.logo === "-"){
+    logo.hidden = true;
+    logo.removeAttribute("src");
+  } else {
+    var bawaan = "logo-agi.svg";
+    var urlLogo = s.logo && !DEMO ? "/logo/" + encodeURIComponent(s.logo) : (DEMO ? bawaan : "/" + bawaan);
+    if (logo.getAttribute("src") !== urlLogo){ logo.onload = pas; logo.onerror = function(){ logo.hidden = true; pas(); }; logo.src = urlLogo; }
+    logo.hidden = false;
+  }
+
+  var tLatar = JSON.stringify(s.latar);
+  if (tLatar !== tandaLatar){ tandaLatar = tLatar; pasangLatar(s); }
+
+  var mati = s.layar === "mati" && !PRATINJAU;          /* pratinjau di halaman admin tetap menampilkan isinya */
+  if (mati !== layarMati){
+    var baruBuka = tandaIsi === "";                      /* halaman baru dibuka saat layar memang sedang mati */
+    layarMati = mati;
+    clearTimeout(timerPadam); clearTimeout(timerCrt);
+    var vid = el("video"), tabung = el("tabung");
+    akar.classList.remove("layar-crt", "crt-pudar");
+    tabung.classList.remove("kembali");
+    if (mati){
+      var padam = function(){ akar.classList.add("layar-padam"); akar.classList.remove("layar-crt", "crt-pudar"); vid.pause(); };
+      akar.classList.add("layar-mati");
+      if (baruBuka) padam();                             /* langsung hitam, tanpa pamit */
+      else timerCrt = setTimeout(function(){             /* pamit dulu, lalu gambar menciut, lalu hitam */
+        akar.classList.add("layar-crt");
+        if (HEMAT) akar.classList.add("crt-pudar");
+        timerPadam = setTimeout(padam, 850);
+      }, LAMA_PAMIT);
+    } else {
+      akar.classList.remove("layar-mati", "layar-padam");
+      void tabung.offsetWidth; tabung.classList.add("kembali");
+      if (vid.classList.contains("tampak")){ var main = vid.play(); if (main && main.catch) main.catch(function(){}); }
+      pas();
+      isi.classList.remove("masuk"); void isi.offsetWidth; isi.classList.add("masuk");
+      if (tataSudut) gambarBingkai();
+    }
+  }
+
+  var tIsi = JSON.stringify([s.mode, s.salam, s.tamu, s.cara_tampil, s.pesan, s.perusahaan, s.standby_judul, s.standby_teks]);
+  if (tIsi !== tandaIsi){
+    var pertama = tandaIsi === "";
+    tandaIsi = tIsi;
+    clearTimeout(timerGanti);
+    var tukar = function(){
+      tulisIsi(s); pas();
+      isi.classList.remove("masuk"); void isi.offsetWidth;
+      isi.classList.add("masuk"); isi.classList.remove("ganti");
+      if (tataSudut) gambarBingkai();
+    };
+    if (pertama) tukar();
+    else { isi.classList.add("ganti"); timerGanti = setTimeout(tukar, 380); }
+  } else {
+    pas();
+  }
+  aturIkut();
+}
+
+/* ---------- ambil keadaan ---------- */
+function bacaDemo(){
+  var s = JSON.parse(JSON.stringify(BAWAAN));
+  try { var t = JSON.parse(localStorage.getItem(KUNCI_DEMO) || "null"); if (t) for (var k in t) s[k] = t[k]; } catch (e) {}
+  return s;
+}
+/* ---------- uji kelancaran: berapa gambar per detik yang benar-benar tergambar ---------- */
+var ukur = {aktif: false, bingkai: 0, sejak: 0, kirim: "", vTotal: 0, vHilang: 0};
+function hitungBingkai(){
+  if (!ukur.aktif) return;
+  ukur.bingkai++;
+  requestAnimationFrame(hitungBingkai);
+}
+function aturUkur(nyala){
+  if (PRATINJAU || nyala === ukur.aktif) return;
+  ukur.aktif = nyala; ukur.kirim = "";
+  el("ukur").hidden = !nyala;
+  if (nyala){ ukur.bingkai = 0; ukur.sejak = performance.now(); ukur.vTotal = ukur.vHilang = 0; el("ukur").textContent = "Mengukur…"; requestAnimationFrame(hitungBingkai); }
+}
+setInterval(function(){
+  if (!ukur.aktif) return;
+  var kini = performance.now(), dt = (kini - ukur.sejak) / 1000;
+  if (dt < 2) return;
+  var fps = ukur.bingkai / dt, baris = "Layar: " + fps.toFixed(0) + " gambar/detik (" + window.innerWidth + "x" + window.innerHeight + ")", kirim = "&fps=" + fps.toFixed(1) + "&lw=" + window.innerWidth + "&lh=" + window.innerHeight;
+  var v = el("video");
+  if (v.classList.contains("tampak") && v.getVideoPlaybackQuality){
+    var q = v.getVideoPlaybackQuality(), total = q.totalVideoFrames, hilang = q.droppedVideoFrames;
+    if (total >= ukur.vTotal && ukur.vTotal > 0){
+      var tampil = ((total - ukur.vTotal) - (hilang - ukur.vHilang)) / dt, lepas = (hilang - ukur.vHilang) / dt;
+      baris += "\nVideo: " + tampil.toFixed(0) + " tampil, " + lepas.toFixed(0) + " hilang /detik";
+      kirim += "&vt=" + tampil.toFixed(1) + "&vh=" + lepas.toFixed(1);
+    }
+    ukur.vTotal = total; ukur.vHilang = hilang;
+  }
+  el("ukur").style.whiteSpace = "pre"; el("ukur").textContent = baris;
+  ukur.kirim = kirim; ukur.bingkai = 0; ukur.sejak = kini;
+}, 3000);
+
+function tanya(){
+  fetch("/api/state" + (PRATINJAU ? "" : "?tv=1" + ukur.kirim), {cache: "no-store"}).then(function(r){ return r.json(); }).then(function(s){
+    aturUkur(!!s.ukur);
+    if (versi === null) versi = s.versi;
+    else if (s.versi !== versi){ location.reload(); return; }
+    if (!sekarang || s.rev !== sekarang.rev) terapkan(s);
+  }).catch(function(){ /* server belum siap: biarkan tampilan terakhir, coba lagi */ })
+    .then(function(){ setTimeout(tanya, 1500); });
+}
+
+pasangRoda();
+detak(); setInterval(detak, 1000);
+window.addEventListener("resize", function(){ pas(); pasIkut(); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ pas(); pasIkut(); });
+
+if (DEMO){
+  terapkan(bacaDemo());
+  window.addEventListener("storage", function(e){ if (e.key === KUNCI_DEMO) terapkan(bacaDemo()); });
+  window.addEventListener("message", function(e){ if (e.data && e.data.tvtamu) terapkan(e.data.tvtamu); });
+} else {
+  tanya();
+}
+})();
+</script>
+</body>
+</html>

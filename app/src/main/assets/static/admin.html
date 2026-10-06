@@ -1,0 +1,1272 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TV Tamu - Admin</title>
+<style>
+@font-face{font-family:"Archivo";font-style:normal;font-weight:100 900;font-stretch:62% 125%;font-display:swap;
+  src:url("font/archivo-latin-standard-normal.woff2") format("woff2");
+  unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:"Archivo";font-style:normal;font-weight:100 900;font-stretch:62% 125%;font-display:swap;
+  src:url("font/archivo-latin-ext-standard-normal.woff2") format("woff2");
+  unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+
+:root{
+  --baja:#12283f; --baja-dalam:#0a1826; --kuningan:#b98a25; --kuningan-terang:#d8b25c;
+  --dasar:#e9eef3; --panel:#ffffff; --garis:#cfd8e1; --tinta:#12283f; --redup:#55687b;
+  --bahaya:#a3312a; --beres:#1f6b4a;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--dasar);color:var(--tinta);
+  font:400 16px/1.5 "Archivo","Segoe UI",system-ui,-apple-system,Arial,sans-serif}
+h1,h2,p{margin:0}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--kuningan-terang);outline-offset:2px}
+
+.kepala{background:var(--baja);color:#fff;padding:14px 20px;display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center}
+.kepala h1{font-size:20px;font-weight:700;font-stretch:112%;letter-spacing:.01em}
+.status{display:flex;align-items:center;gap:8px;font-size:14.5px;color:#d5dfe8;min-width:0}
+.tombol-layar{margin-left:auto;padding:8px 14px;min-height:38px;border-radius:8px;border:1px solid #6f8499;background:transparent;color:#fff;
+  font:inherit;font-size:14.5px;font-weight:600;cursor:pointer}
+.tombol-layar:hover{background:#1b3a58}
+.tombol-layar.mati{background:var(--kuningan);border-color:var(--kuningan);color:#fff}
+.tombol-layar[disabled]{opacity:.6;cursor:default}
+.status b{color:#fff;font-weight:600}
+.titik{width:9px;height:9px;border-radius:50%;background:#7f93a6;flex:none}
+.titik.hidup{background:var(--kuningan-terang)}
+
+.keluar{margin-left:auto}
+.keluar button{padding:6px 14px;border-radius:7px;border:1px solid #5d7389;background:transparent;color:#fff;font-size:14.5px;cursor:pointer}
+.keluar button:hover{background:#1b3a58}
+.demo{background:#fff6dc;border-bottom:1px solid #e6d199;color:#5b4508;padding:10px 20px;font-size:14.5px}
+.demo[hidden]{display:none}
+
+.tata{max-width:1180px;margin:0 auto;padding:20px 16px 80px;display:grid;gap:20px;
+  grid-template-columns:minmax(0,1fr) 300px;align-items:start}
+.kolom{display:grid;gap:20px;min-width:0}
+.pratinjau{position:sticky;top:16px;display:grid;gap:10px;justify-items:center}
+.bingkai{width:100%;max-width:300px;aspect-ratio:9/16;background:var(--baja-dalam);border-radius:10px;overflow:hidden;
+  border:6px solid #1c2733;box-shadow:0 10px 30px -12px rgb(10 24 38 / .5)}
+.bingkai.datar{aspect-ratio:16/9}
+.bingkai iframe{width:100%;height:100%;border:0;display:block}
+.pratinjau p{font-size:13.5px;color:var(--redup);text-align:center}
+.pratinjau a{color:var(--tinta)}
+
+.panel{background:var(--panel);border:1px solid var(--garis);border-radius:10px;padding:20px}
+.panel h2{font-size:18px;font-weight:700;margin-bottom:4px}
+.panel .ket{color:var(--redup);font-size:14.5px;margin-bottom:16px;max-width:62ch}
+
+label,.label{display:block;font-size:14px;font-weight:600;margin-bottom:5px}
+.isian{margin-bottom:16px}
+input[type=text],input[type=password],input[type=number],textarea,select{width:100%;padding:10px 12px;border:1px solid #aab7c4;border-radius:7px;background:#fff}
+input[type=text]:focus,input[type=password]:focus,input[type=number]:focus,textarea:focus,select:focus{border-color:var(--baja)}
+textarea{resize:vertical;min-height:72px}
+.bantuan{font-size:13.5px;color:var(--redup);margin-top:5px}
+
+.cepat{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.cepat button{padding:5px 12px;border-radius:999px;border:1px solid var(--garis);background:#f4f7fa;font-size:14px;cursor:pointer}
+.cepat button:hover{border-color:var(--baja)}
+
+.daftar-tamu{display:grid;gap:10px;margin-bottom:10px}
+.baris-tamu{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) auto;gap:8px;align-items:center}
+.baris-tamu .hapus{width:40px;height:40px;border-radius:7px;border:1px solid var(--garis);background:#fff;cursor:pointer;font-size:18px;line-height:1;color:var(--redup)}
+.baris-tamu .hapus:hover{border-color:var(--bahaya);color:var(--bahaya)}
+.baris-tamu .hapus[disabled]{visibility:hidden}
+
+/* satu baris "Urutan sendiri": nomor, isi, ukuran, lama, posisi, tombol geser dan hapus */
+.baris-urutan{display:grid;grid-template-columns:1.4em minmax(0,1.6fr) repeat(3,minmax(0,.6fr)) minmax(0,.85fr) auto;gap:8px;align-items:end;
+  padding:10px 0;border-top:1px solid var(--garis)}
+.baris-urutan:first-child{border-top:0;padding-top:2px}
+.baris-urutan .nomor{align-self:center;font-weight:700;color:var(--redup);font-variant-numeric:tabular-nums}
+.baris-urutan label{font-size:12.5px;font-weight:600;color:var(--redup);margin-bottom:3px}
+.baris-urutan input,.baris-urutan select{padding:8px 9px}
+.baris-urutan .u-teks{grid-column:2 / -1}
+.baris-urutan .u-teks[hidden]{display:none}
+.baris-urutan .u-tombol{display:flex;gap:4px}
+.baris-urutan .u-tombol button{width:34px;height:38px;border-radius:7px;border:1px solid var(--garis);background:#fff;cursor:pointer;
+  font-size:16px;line-height:1;color:var(--redup)}
+.baris-urutan .u-tombol button:hover{border-color:var(--baja);color:var(--baja)}
+.baris-urutan .u-tombol .u-hapus:hover{border-color:var(--bahaya);color:var(--bahaya)}
+.baris-urutan .u-tombol button[disabled]{opacity:.35;cursor:default}
+.urutan-aksi{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:10px}
+.simpanan-judul{font-size:14px;font-weight:600;margin:16px 0 6px;padding-top:12px;border-top:1px solid var(--garis)}
+.simpanan-baru{display:flex;gap:8px;align-items:center}
+.simpanan-baru input{flex:1;min-width:0}
+.baris-simpanan{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;padding:8px 0;border-top:1px solid var(--garis)}
+.baris-simpanan .s-nama{flex:1 1 12em;min-width:0}
+.baris-simpanan .s-nama b{display:block;font-size:15px;overflow-wrap:anywhere}
+.baris-simpanan .s-nama span{display:block;font-size:13px;color:var(--redup);overflow-wrap:anywhere}
+.baris-simpanan .tombol.bahaya:hover{border-color:var(--bahaya);color:var(--bahaya)}
+#simpanan-daftar:empty::after{content:"Belum ada urutan yang disimpan.";display:block;font-size:13.5px;color:var(--redup);padding:8px 0}
+#urutan-kotak{margin-top:12px;padding:12px 14px;border:1px solid var(--garis);border-radius:9px;background:#fafbfc}
+.tombol{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 18px;border-radius:8px;
+  border:1px solid var(--baja);background:#fff;font-weight:600;cursor:pointer;min-height:44px}
+.tombol:hover{background:#f1f5f8}
+.tombol.utama{background:var(--baja);color:#fff}
+.tombol.utama:hover{background:#1b3a58}
+.tombol.kecil{padding:7px 12px;min-height:36px;font-size:14.5px;border-color:#aab7c4}
+.tombol[disabled]{opacity:.55;cursor:default}
+.aksi{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:20px;padding-top:18px;border-top:1px solid var(--garis)}
+.catatan{font-size:14px;color:var(--redup);flex-basis:100%}
+.catatan.belum{color:#8a5a00;font-weight:600}
+
+.pilihan{display:flex;flex-wrap:wrap;gap:8px 18px}
+.pilihan label{display:inline-flex;align-items:center;gap:7px;font-weight:400;font-size:15.5px;margin:0;cursor:pointer}
+input[type=radio],input[type=checkbox]{width:18px;height:18px;accent-color:var(--baja);margin:0}
+[hidden]{display:none !important}
+
+.ubin-wadah{display:grid;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px;margin-bottom:16px}
+.ubin{position:relative}
+.ubin .pilih{display:block;width:100%;padding:0;border:2px solid var(--garis);border-radius:9px;background:#fff;cursor:pointer;overflow:hidden;text-align:left}
+.ubin .pilih:hover{border-color:#8a9bab}
+.ubin.dipakai .pilih{border-color:var(--kuningan);box-shadow:0 0 0 2px var(--kuningan)}
+.ubin .gambar{aspect-ratio:9/13;background:linear-gradient(160deg,#12283f,#0a1826);display:block;width:100%;object-fit:cover}
+.ubin .gambar.rodagigi{background:
+  radial-gradient(circle at 78% 82%, transparent 0 26%, rgb(216 178 92 / .55) 26% 27.5%, transparent 27.5% 44%, rgb(216 178 92 / .55) 44% 45.5%, transparent 45.5%),
+  linear-gradient(160deg,#12283f,#0a1826)}
+.terang .ubin .gambar.rodagigi,.terang .ubin .gambar.polos{background:linear-gradient(160deg,#fff,#f1f4f7)}
+.terang .ubin .gambar.rodagigi{background:
+  radial-gradient(circle at 78% 82%, transparent 0 26%, rgb(226 35 26 / .6) 26% 27.5%, transparent 27.5% 44%, rgb(226 35 26 / .6) 44% 45.5%, transparent 45.5%),
+  linear-gradient(160deg,#fff,#f1f4f7)}
+.gelapmerah .ubin .gambar.rodagigi{background:
+  radial-gradient(circle at 78% 82%, transparent 0 26%, rgb(255 59 48 / .7) 26% 27.5%, transparent 27.5% 44%, rgb(255 59 48 / .7) 44% 45.5%, transparent 45.5%),
+  linear-gradient(160deg,#12283f,#0a1826)}
+.pucat .ubin .gambar.rodagigi{background:
+  radial-gradient(circle at 26% 30%, #fff 0 5%, transparent 5.5%),
+  radial-gradient(circle at 26% 30%, #ffdcdc 0 17%, transparent 17.5%),
+  radial-gradient(circle at 78% 82%, #fff 0 9%, #ffdcdc 9.5% 45%, transparent 45.5%),
+  linear-gradient(160deg,#fff,#f1f4f7)}
+/* ubin "Roda + bingkai": bingkai tipis dan roda di kanan atas dan kiri bawah; --w warna garis, --d dasar */
+.ubin .gambar.rodasudut{--w:rgb(216 178 92 / .6);--d:linear-gradient(160deg,#12283f,#0a1826);background:
+  linear-gradient(var(--w),var(--w)) 50% 5%/82% 1.5px no-repeat,
+  linear-gradient(var(--w),var(--w)) 50% 95%/82% 1.5px no-repeat,
+  linear-gradient(var(--w),var(--w)) 9% 50%/1.5px 90% no-repeat,
+  linear-gradient(var(--w),var(--w)) 91% 50%/1.5px 90% no-repeat,
+  radial-gradient(circle at 86% 3%, transparent 0 13%, var(--w) 13% 14.5%, transparent 14.5% 22%, var(--w) 22% 23.5%, transparent 23.5%),
+  radial-gradient(circle at 14% 97%, transparent 0 13%, var(--w) 13% 14.5%, transparent 14.5% 22%, var(--w) 22% 23.5%, transparent 23.5%),
+  var(--d)}
+.terang .ubin .gambar.rodasudut{--w:rgb(226 35 26 / .6);--d:linear-gradient(160deg,#fff,#f1f4f7)}
+.gelapmerah .ubin .gambar.rodasudut{--w:rgb(255 59 48 / .7)}
+.pucat .ubin .gambar.rodasudut{--w:#f3b4b4;background:
+  linear-gradient(var(--w),var(--w)) 50% 5%/82% 1.5px no-repeat,
+  linear-gradient(var(--w),var(--w)) 50% 95%/82% 1.5px no-repeat,
+  linear-gradient(var(--w),var(--w)) 9% 50%/1.5px 90% no-repeat,
+  linear-gradient(var(--w),var(--w)) 91% 50%/1.5px 90% no-repeat,
+  radial-gradient(circle at 86% 3%, #fff 0 5%, #ffdcdc 5.5% 23%, transparent 23.5%),
+  radial-gradient(circle at 14% 97%, #fff 0 5%, #ffdcdc 5.5% 23%, transparent 23.5%),
+  var(--d)}
+.logo-kini img.terang{background:#fff;border:1px solid var(--garis)}
+.ubin .nama{display:block;padding:7px 9px 8px;font-size:13.5px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ubin .nama small{display:block;color:var(--redup);font-size:12.5px}
+.ubin .tanda{position:absolute;top:8px;left:8px;background:var(--kuningan);color:#fff;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px}
+.ubin .buang{position:absolute;top:6px;right:6px;width:30px;height:30px;border-radius:50%;border:0;background:rgb(10 24 38 / .72);color:#fff;cursor:pointer;font-size:15px;line-height:1}
+.ubin .buang:hover{background:var(--bahaya)}
+
+.unggah{border:2px dashed #aab7c4;border-radius:9px;padding:16px;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;margin-bottom:16px}
+.unggah.seret{border-color:var(--baja);background:#f1f5f8}
+.unggah p{font-size:14px;color:var(--redup);flex:1 1 220px}
+.kemajuan{flex-basis:100%;height:8px;border-radius:4px;background:#dfe6ec;overflow:hidden}
+.kemajuan i{display:block;height:100%;width:0;background:var(--baja);transition:width .2s}
+.geser{display:flex;align-items:center;gap:12px}
+.geser input{flex:1;accent-color:var(--baja)}
+.geser output{width:3.2em;text-align:right;font-variant-numeric:tabular-nums;font-size:14.5px}
+
+.logo-kini{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo-kini img{height:54px;max-width:180px;object-fit:contain;background:var(--baja);border-radius:7px;padding:8px}
+
+details.panel>summary{cursor:pointer;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 14px;list-style:none}
+details.panel>summary::-webkit-details-marker{display:none}
+details.panel>summary::before{content:"";width:9px;height:9px;border-right:2px solid var(--tinta);border-bottom:2px solid var(--tinta);
+  transform:rotate(-45deg);transition:transform .15s;align-self:center;margin-right:2px}
+details.panel[open]>summary::before{transform:rotate(45deg)}
+details.panel>summary h2{margin:0;display:inline}
+details.panel>summary span{color:var(--redup);font-size:14.5px}
+details.panel[open]>summary{margin-bottom:14px}
+.kabar{padding:10px 12px;border-radius:7px;background:#eef3f8;border:1px solid var(--garis);font-size:14.5px;margin-bottom:16px}
+.kabar.gagal{background:#fbeceb;border-color:#e6bdb9;color:var(--bahaya)}
+.kabar.jadi{background:#e9f5ee;border-color:#b9dcc8;color:var(--beres)}
+.daftar-wifi{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.daftar-wifi li{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 10px;border:1px solid var(--garis);border-radius:7px}
+.daftar-wifi .nama-wifi{flex:1 1 140px;font-weight:600;overflow-wrap:anywhere}
+.daftar-wifi .dipakai{font-size:13px;font-weight:700;color:#fff;background:var(--kuningan);padding:2px 9px;border-radius:999px}
+.sejajar{display:flex;gap:8px;align-items:center}
+.sejajar select{flex:1;min-width:0}
+.tabel-gaya{display:grid;gap:14px}
+.baris-gaya{display:grid;grid-template-columns:minmax(120px,170px) minmax(0,1fr) minmax(0,1fr);gap:6px 18px;align-items:center;
+  padding-bottom:14px;border-bottom:1px solid var(--garis)}
+.baris-gaya:last-child{border-bottom:0;padding-bottom:0}
+.baris-gaya .judul{font-weight:600;font-size:15px}
+.baris-gaya label{font-size:13px;font-weight:400;color:var(--redup);margin:0 0 2px}
+.baris-gaya .geser output{width:3.6em}
+.logo-kini #logo-ket{font-size:14.5px;color:var(--redup)}
+.roti{position:fixed;left:50%;bottom:22px;transform:translate(-50%,20px);background:var(--baja-dalam);color:#fff;
+  padding:11px 18px;border-radius:8px;font-size:15px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;max-width:calc(100vw - 32px);z-index:5}
+.roti.tampak{opacity:1;transform:translate(-50%,0)}
+.roti.galat{background:var(--bahaya)}
+
+@media (max-width:860px){
+  .tata{grid-template-columns:minmax(0,1fr)}
+  .pratinjau{position:static;order:-1}
+  .bingkai{max-width:150px;border-width:4px}
+  .bingkai.datar{max-width:300px}
+  .pratinjau p br{display:none}
+}
+@media (max-width:640px){
+  .baris-gaya{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:640px){
+  .baris-urutan{grid-template-columns:1.4em repeat(3,minmax(0,1fr))}
+  .baris-urutan .u-isi{grid-column:2 / -1}
+  .baris-urutan .u-ukuran{grid-column:2}
+  .baris-urutan .u-warna{grid-column:2 / span 2}
+  .baris-urutan .u-tombol{grid-column:4;justify-content:flex-end}
+  .simpanan-baru{flex-wrap:wrap}
+}
+@media (max-width:520px){
+  .panel{padding:16px}
+  .baris-tamu{grid-template-columns:minmax(0,1fr) auto}
+  .baris-tamu .f-instansi{grid-column:1;grid-row:2}
+  .baris-tamu .hapus{grid-row:1 / span 2;align-self:stretch;height:auto}
+  .aksi .tombol{flex:1 1 100%}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none !important}}
+</style>
+</head>
+<body>
+<header class="kepala">
+  <h1>TV Tamu</h1>
+  <div class="status" aria-live="polite"><span class="titik" id="titik"></span><span id="status">Menghubungi TV…</span></div>
+  <button type="button" class="tombol-layar" id="layar-tombol" hidden>Matikan layar TV</button>
+  <form method="post" action="/keluar" id="form-keluar" class="keluar" hidden><button type="submit">Keluar</button></form>
+</header>
+<div class="demo" id="tv-diam" hidden>
+  Browser di TV belum membuka halaman ini. Kalau baru dinyalakan, tunggu sebentar. Kalau terus begini, buka lagi aplikasi TV Tamu di box.
+</div>
+<div class="demo" id="demo" hidden>
+  Mode coba di laptop: perubahan hanya tersimpan di browser ini. Upload latar dan logo lain baru aktif setelah dipasang di box.
+</div>
+
+<div class="tata">
+  <div class="kolom">
+
+    <form class="panel" id="form-tamu" autocomplete="off">
+      <h2>Tamu</h2>
+      <p class="ket">Isi nama tamu lalu tekan Tampilkan di TV. Layar berubah dalam satu atau dua detik.</p>
+
+      <div class="isian">
+        <label for="salam">Salam</label>
+        <input type="text" id="salam" maxlength="80">
+        <div class="cepat" id="salam-cepat">
+          <button type="button">Selamat Datang</button>
+          <button type="button">Welcome</button>
+          <button type="button">Selamat Datang Kembali</button>
+        </div>
+      </div>
+
+      <div class="isian">
+        <span class="label" id="label-tamu">Nama tamu dan instansi</span>
+        <div class="daftar-tamu" id="daftar-tamu" role="group" aria-labelledby="label-tamu"></div>
+        <button type="button" class="tombol kecil" id="tambah-tamu">Tambah tamu</button>
+      </div>
+
+      <div class="isian" id="isian-cara" hidden>
+        <span class="label">Kalau tamunya lebih dari satu</span>
+        <div class="pilihan">
+          <label><input type="radio" name="cara" value="baris"> Tampil semua, berbaris</label>
+          <label><input type="radio" name="cara" value="gantian"> Bergantian satu per satu</label>
+        </div>
+      </div>
+
+      <div class="isian" style="margin-bottom:0">
+        <label for="pesan">Pesan tambahan (boleh kosong)</label>
+        <textarea id="pesan" maxlength="400" rows="2"></textarea>
+      </div>
+
+      <div class="aksi">
+        <button type="submit" class="tombol utama" id="tampilkan">Tampilkan di TV</button>
+        <button type="button" class="tombol" id="kosongkan">Kosongkan layar</button>
+        <p class="catatan" id="catatan"></p>
+      </div>
+    </form>
+
+    <section class="panel" aria-labelledby="judul-latar">
+      <h2 id="judul-latar">Latar</h2>
+      <p class="ket">Klik salah satu untuk langsung dipakai di TV. Video paling lancar kalau berdiri 720×1280, MP4 (H.264), tanpa suara, dan pendek saja karena diputar berulang.</p>
+      <div class="ubin-wadah" id="ubin"></div>
+      <div class="unggah" id="unggah">
+        <button type="button" class="tombol kecil" id="pilih-berkas">Upload video atau foto</button>
+        <input type="file" id="berkas" accept=".mp4,.m4v,.webm,.jpg,.jpeg,.png,.webp" multiple hidden>
+        <p id="ket-unggah">Bisa juga seret berkas ke kotak ini. MP4, WebM, JPG, PNG, atau WebP.</p>
+        <div class="kemajuan" id="kemajuan" hidden><i></i></div>
+      </div>
+      <div class="isian">
+        <span class="label">Susunan tulisan</span>
+        <div class="pilihan">
+          <label><input type="radio" name="tata_teks" value="biasa"> Biasa</label>
+          <label><input type="radio" name="tata_teks" value="urutan"> Urutan sendiri</label>
+        </div>
+        <p class="bantuan">Biasa: tulisan tampil terus di atas latar. Urutan sendiri: Anda yang menyusun tulisan apa yang muncul, seberapa besar, berapa lama, di mana, dan warnanya; cocok untuk mengikuti adegan video latar.</p>
+        <div id="urutan-kotak" hidden>
+          <div id="urutan-daftar"></div>
+          <div class="urutan-aksi">
+            <button type="button" class="tombol kecil" id="urutan-tambah">Tambah urutan</button>
+            <span class="bantuan" id="urutan-jumlah" style="margin-top:0"></span>
+          </div>
+          <p class="bantuan">Urutan tampil bergantian dari nomor 1, lalu berulang. Ukuran 100% = bawaan. Posisi 0% paling atas, 50% tengah, 100% paling bawah. Warna “Ikut” memakai Warna tulisan di Pengaturan layar. “Kosong” dipakai untuk memberi jeda tanpa tulisan. Kalau latarnya video, hitungan waktunya mengikuti detik video; samakan jumlah lama dengan lama videonya supaya tiap tulisan selalu muncul di adegan yang sama.</p>
+
+          <p class="simpanan-judul">Simpanan urutan</p>
+          <div class="simpanan-baru">
+            <input type="text" id="simpanan-nama" maxlength="60" placeholder="Nama simpanan, misalnya nama videonya" aria-label="Nama simpanan">
+            <button type="button" class="tombol kecil" id="simpanan-simpan">Simpan urutan di atas</button>
+          </div>
+          <p class="bantuan">Menyimpan urutan yang sedang tampil di atas, beserta latar yang sedang dipakai. Nama yang sama menimpa simpanan lama. “Pakai” memasang kembali urutannya, dan latarnya juga kalau berkasnya masih ada.</p>
+          <div id="simpanan-daftar"></div>
+        </div>
+      </div>
+      <div class="isian">
+        <label for="gelap" id="label-gelap">Gelapkan video atau foto supaya tulisan terbaca</label>
+        <div class="geser"><input type="range" id="gelap" min="0" max="85" step="5"><output id="gelap-nilai" for="gelap"></output></div>
+      </div>
+      <div class="isian" style="margin-bottom:0">
+        <label for="roda_kecepatan">Kecepatan putaran roda gigi</label>
+        <div class="geser"><input type="range" id="roda_kecepatan" min="0" max="400" step="10"><output id="roda_kecepatan-nilai" for="roda_kecepatan" style="width:5.5em"></output></div>
+        <p class="bantuan">0% berhenti, 100% bawaan (satu putaran roda besar dalam 4 menit), 400% paling cepat.</p>
+      </div>
+    </section>
+
+    <section class="panel" aria-labelledby="judul-atur">
+      <h2 id="judul-atur">Pengaturan layar</h2>
+      <p class="ket">Diatur sekali saja. Setiap perubahan di bagian ini langsung tersimpan.</p>
+
+      <div class="isian">
+        <label for="putar">Posisi TV</label>
+        <select id="putar">
+          <option value="90">Berdiri (portrait)</option>
+          <option value="270">Berdiri, arah sebaliknya</option>
+          <option value="0">Mendatar (landscape)</option>
+          <option value="180">Mendatar, terbalik</option>
+        </select>
+        <p class="bantuan">Kalau tulisan di TV tampil terbalik, pilih arah sebaliknya.</p>
+      </div>
+
+      <div class="isian">
+        <span class="label">Tema</span>
+        <div class="pilihan">
+          <label><input type="radio" name="tema" value="gelap"> Gelap</label>
+          <label><input type="radio" name="tema" value="gelapmerah"> Gelap, roda merah</label>
+          <label><input type="radio" name="tema" value="terang"> Terang</label>
+          <label><input type="radio" name="tema" value="pucat"> Merah muda</label>
+        </div>
+        <p class="bantuan">Gelap: latar biru tua, tulisan terang, roda gigi garis emas. Gelap, roda merah: sama, tetapi roda giginya garis merah. Terang: latar putih, tulisan hitam, roda gigi garis merah. Merah muda: seperti Terang, tetapi roda giginya merah muda pucat.</p>
+      </div>
+
+      <div class="isian">
+        <span class="label">Warna tulisan</span>
+        <div class="pilihan">
+          <label><input type="radio" name="warna_teks" value="tema"> Ikut tema</label>
+          <label><input type="radio" name="warna_teks" value="hitam"> Hitam</label>
+          <label><input type="radio" name="warna_teks" value="putih"> Putih</label>
+          <label><input type="radio" name="warna_teks" value="merah"> Merah</label>
+        </div>
+        <p class="bantuan">Ikut tema: warnanya ditentukan tema. Pilih warna lain kalau tulisan kurang terbaca di atas latar yang dipakai. Di “Urutan sendiri”, tiap urutan juga bisa diberi warnanya sendiri.</p>
+      </div>
+
+      <div class="isian">
+        <span class="label">Perataan tulisan</span>
+        <div class="pilihan">
+          <label><input type="radio" name="perataan" value="tengah"> Tengah</label>
+          <label><input type="radio" name="perataan" value="kiri"> Rata kiri</label>
+        </div>
+      </div>
+
+      <div class="isian" id="isian-layar-tv">
+        <div class="pilihan"><label><input type="checkbox" id="layar_tv"> Saat layar dimatikan, matikan juga sinyal ke TV</label></div>
+        <p class="bantuan">Tanpa dicentang, “Matikan layar TV” hanya menghitamkan layar: TV tetap menyala dan langsung tampil lagi saat dinyalakan. Kalau dicentang, sinyal ke TV ikut dihentikan, sehingga TV menampilkan “tidak ada sinyal” lalu biasanya tidur sendiri; TV yang mendukung HDMI-CEC ikut dimatikan dan dinyalakan lagi. Coba dulu saat tidak ada tamu: kalau TV tidak menyala sendiri ketika layar dinyalakan lagi, jangan dicentang.</p>
+      </div>
+
+      <div class="isian">
+        <div class="pilihan"><label><input type="checkbox" id="jam"> Tampilkan jam dan tanggal</label></div>
+        <p class="bantuan">Jam mengikuti jam box, yang mengambil waktu dari internet. Kalau jaringannya tanpa internet, matikan saja.</p>
+      </div>
+
+      <div class="isian">
+        <label for="perusahaan">Nama perusahaan</label>
+        <input type="text" id="perusahaan" maxlength="80">
+      </div>
+
+      <div class="isian">
+        <span class="label">Logo</span>
+        <div class="logo-kini">
+          <img id="logo-gambar" alt="Logo saat ini" hidden>
+          <span id="logo-ket"></span>
+        </div>
+        <div class="logo-kini" style="margin-top:10px">
+          <button type="button" class="tombol kecil" id="pilih-logo">Upload logo lain</button>
+          <button type="button" class="tombol kecil" id="logo-bawaan" hidden>Pakai logo AGI bawaan</button>
+          <button type="button" class="tombol kecil" id="logo-tanpa">Tanpa logo</button>
+          <input type="file" id="berkas-logo" accept=".png,.jpg,.jpeg,.webp,.svg" hidden>
+        </div>
+        <p class="bantuan">Untuk logo lain, PNG atau SVG dengan latar transparan paling cocok, karena layarnya gelap.</p>
+      </div>
+
+      <div class="isian">
+        <label for="logo_ukuran">Ukuran logo</label>
+        <div class="geser"><input type="range" id="logo_ukuran" min="40" max="250" step="5"><output id="logo_ukuran-nilai" for="logo_ukuran"></output></div>
+      </div>
+
+      <div class="isian">
+        <span class="label">Posisi logo</span>
+        <div class="pilihan">
+          <label><input type="radio" name="logo_posisi" value="kiri"> Kiri atas</label>
+          <label><input type="radio" name="logo_posisi" value="tengah"> Tengah atas</label>
+          <label><input type="radio" name="logo_posisi" value="kanan"> Kanan atas</label>
+        </div>
+      </div>
+
+      <div class="isian">
+        <label for="standby_judul">Tulisan saat tidak ada tamu</label>
+        <input type="text" id="standby_judul" maxlength="80">
+      </div>
+      <div class="isian" style="margin-bottom:0">
+        <label for="standby_teks">Kalimat di bawahnya (boleh kosong)</label>
+        <textarea id="standby_teks" maxlength="400" rows="2"></textarea>
+      </div>
+    </section>
+
+    <details class="panel" id="panel-gaya">
+      <summary><h2>Ukuran huruf dan jarak</h2><span>Atur tiap baris tulisan di TV</span></summary>
+      <p class="ket">100% adalah ukuran bawaan. Jarak mengatur ruang kosong di atas baris itu. Perubahan langsung tersimpan dan terlihat di pratinjau. Kalau tulisan jadi tidak muat di layar, semuanya dikecilkan otomatis dengan perbandingan yang sama.</p>
+      <div class="isian">
+        <label for="posisi_isi">Posisi tulisan (dari atas ke bawah)</label>
+        <div class="geser"><input type="range" id="posisi_isi" min="0" max="100" step="5"><output id="posisi_isi-nilai" for="posisi_isi" style="width:6.5em"></output></div>
+        <p class="bantuan">Menggeser seluruh kelompok tulisan (salam sampai pesan) di ruang antara logo dan jam. 0% menempel di atas, 50% di tengah, 100% menempel di bawah.</p>
+      </div>
+      <div class="tabel-gaya" id="tabel-gaya"></div>
+      <button type="button" class="tombol kecil" id="gaya-bawaan" style="margin-top:16px">Kembalikan ukuran, jarak, dan posisi ke bawaan</button>
+    </details>
+
+    <details class="panel" id="panel-wifi" hidden>
+      <summary><h2>WiFi Raspberry Pi</h2><span id="wifi-ringkas">Lihat atau ganti WiFi yang dipakai Pi</span></summary>
+      <p class="ket">Simpan WiFi lain supaya Pi bisa dipindah ke jaringan itu. Pi mengingat semua WiFi yang tersimpan dan memakai yang terjangkau. Bagian ini hanya ada di jaringan kantor, tidak lewat internet.</p>
+      <div class="kabar" id="wifi-kabar" role="status" hidden></div>
+
+      <div class="isian">
+        <span class="label">Sedang dipakai</span>
+        <div id="wifi-aktif">Memeriksa…</div>
+      </div>
+
+      <div class="isian">
+        <span class="label">WiFi tersimpan</span>
+        <ul class="daftar-wifi" id="wifi-tersimpan"></ul>
+      </div>
+
+      <form id="form-wifi" autocomplete="off">
+        <div class="isian">
+          <label for="wifi-pilih">Tambah WiFi</label>
+          <div class="sejajar">
+            <select id="wifi-pilih"></select>
+            <button type="button" class="tombol kecil" id="wifi-pindai">Pindai ulang</button>
+          </div>
+          <input type="text" id="wifi-nama" maxlength="32" placeholder="Nama WiFi (SSID), huruf besar-kecil harus sama" aria-label="Nama WiFi" style="margin-top:8px" hidden>
+        </div>
+        <div class="isian">
+          <label for="wifi-sandi">Password WiFi</label>
+          <input type="password" id="wifi-sandi" maxlength="63" autocomplete="new-password">
+          <div class="pilihan" style="margin-top:8px"><label><input type="checkbox" id="wifi-lihat"> Tampilkan password</label></div>
+        </div>
+        <div class="isian">
+          <div class="pilihan"><label><input type="checkbox" id="wifi-pindah"> Langsung pindah ke WiFi ini sekarang</label></div>
+          <p class="bantuan">Tanpa dicentang, WiFi hanya disimpan dan Pi tetap di jaringan sekarang. Kalau dicentang dan gagal tersambung, Pi kembali sendiri ke WiFi sebelumnya dalam waktu sekitar satu menit.</p>
+        </div>
+        <button type="submit" class="tombol utama" id="wifi-simpan">Simpan WiFi</button>
+      </form>
+    </details>
+  </div>
+
+  <aside class="pratinjau" aria-label="Pratinjau TV">
+    <div class="bingkai" id="bingkai"><iframe id="layar" title="Pratinjau tampilan TV"></iframe></div>
+    <p>Yang sedang tampil di TV.<br><a id="tautan-tv" target="_blank" rel="noopener">Buka tampilan TV di tab baru</a></p>
+  </aside>
+</div>
+
+<div class="roti" id="roti" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+"use strict";
+var DEMO = location.protocol === "file:";
+var KUNCI_DEMO = "tvtamu-demo";
+var BAWAAN = {mode:"standby",salam:"Selamat Datang",tamu:[],cara_tampil:"baris",pesan:"",
+  perusahaan:"PT Asano Gear Indonesia",standby_judul:"Selamat Datang",standby_teks:"",
+  latar:{jenis:"rodagigi",file:""},gelap:45,perataan:"tengah",jam:true,putar:90,logo:"",logo_ukuran:100,
+  logo_posisi:"kiri",gaya:{},posisi_isi:50,roda_kecepatan:100,layar:"nyala",layar_tv:false,tema:"gelap",tata_teks:"biasa",warna_teks:"tema",
+  urutan:[{isi:"salam",teks:"",ukuran:100,posisi:50,lama:4,warna:"ikut"},{isi:"tamu",teks:"",ukuran:100,posisi:50,lama:8,warna:"ikut"},
+          {isi:"pesan",teks:"",ukuran:100,posisi:50,lama:4,warna:"ikut"}],urutan_simpanan:[],rev:0};
+var GAYA_BARIS = [
+  {k:"salam", nama:"Salam", jarak:false},
+  {k:"garis", nama:"Garis kuning", jarak:true},
+  {k:"nama", nama:"Nama tamu", jarak:true},
+  {k:"instansi", nama:"Instansi", jarak:true},
+  {k:"pesan", nama:"Pesan tambahan", jarak:true},
+  {k:"jam", nama:"Jam", jarak:false},
+  {k:"tanggal", nama:"Tanggal", jarak:true},
+  {k:"perusahaan", nama:"Nama perusahaan (bawah)", jarak:true}];
+var GAYA_KUNCI = ["salam","garis","nama","instansi","pesan","jam","tanggal","perusahaan"];
+var MAKS_UPLOAD = 1024 * 1024 * 1024;
+var el = function(id){ return document.getElementById(id); };
+var state = null, media = [], timerRoti = null;
+
+/* ---------- penyimpanan: server di Pi, atau browser saat mode coba ---------- */
+function bacaDemo(){
+  var s = JSON.parse(JSON.stringify(BAWAAN));
+  try { var t = JSON.parse(localStorage.getItem(KUNCI_DEMO) || "null"); if (t) for (var k in t) s[k] = t[k]; } catch (e) {}
+  return s;
+}
+function minta(metode, url, badan){
+  return fetch(url, {method: metode, cache: "no-store",
+      headers: badan ? {"Content-Type": "application/json"} : {},
+      body: badan ? JSON.stringify(badan) : undefined})
+    .then(function(r){
+      if (r.status === 401){ location.href = "/masuk"; throw new Error("Login sudah habis, silakan masuk lagi."); }
+      return r.json().catch(function(){ return {}; }).then(function(d){
+        if (!r.ok) throw new Error(d.pesan || "TV menolak permintaan (" + r.status + ").");
+        return d;
+      });
+    }, function(){ throw new Error("TV tidak terhubung. Cek apakah box TV menyala dan satu jaringan."); });
+}
+function ambilState(){
+  return DEMO ? Promise.resolve(bacaDemo()) : minta("GET", "/api/state");
+}
+function ubahState(perubahan){
+  if (!DEMO) return minta("POST", "/api/state", perubahan);
+  var s = bacaDemo();
+  for (var k in perubahan) s[k] = perubahan[k];
+  s.rev = (s.rev || 0) + 1;
+  try { localStorage.setItem(KUNCI_DEMO, JSON.stringify(s)); } catch (e) {}
+  try { el("layar").contentWindow.postMessage({tvtamu: s}, "*"); } catch (e) {}
+  return Promise.resolve(s);
+}
+
+function roti(teks, galat){
+  var r = el("roti");
+  r.textContent = teks;
+  r.className = "roti tampak" + (galat ? " galat" : "");
+  clearTimeout(timerRoti);
+  timerRoti = setTimeout(function(){ r.className = "roti" + (galat ? " galat" : ""); }, galat ? 6000 : 2600);
+}
+function gagal(e){ roti(e.message || String(e), true); }
+
+/* ---------- tamu ---------- */
+function barisTamu(t){
+  var b = document.createElement("div");
+  b.className = "baris-tamu";
+  b.innerHTML = '<input type="text" class="f-nama" maxlength="80" placeholder="Nama tamu" aria-label="Nama tamu">'
+    + '<input type="text" class="f-instansi" maxlength="100" placeholder="Instansi atau perusahaan" aria-label="Instansi atau perusahaan">'
+    + '<button type="button" class="hapus" aria-label="Hapus tamu ini" title="Hapus tamu ini">×</button>';
+  b.querySelector(".f-nama").value = (t && t.nama) || "";
+  b.querySelector(".f-instansi").value = (t && t.instansi) || "";
+  return b;
+}
+function isiDaftarTamu(daftar){
+  var d = el("daftar-tamu");
+  d.textContent = "";
+  (daftar && daftar.length ? daftar : [{}]).forEach(function(t){ d.appendChild(barisTamu(t)); });
+  rapikanTamu();
+}
+function rapikanTamu(){
+  var baris = el("daftar-tamu").children;
+  for (var i = 0; i < baris.length; i++) baris[i].querySelector(".hapus").disabled = baris.length === 1;
+  el("isian-cara").hidden = bacaTamu().length < 2;
+  el("tambah-tamu").hidden = baris.length >= 12;
+}
+function bacaTamu(){
+  return Array.prototype.map.call(el("daftar-tamu").children, function(b){
+    return {nama: b.querySelector(".f-nama").value.trim(), instansi: b.querySelector(".f-instansi").value.trim()};
+  }).filter(function(t){ return t.nama || t.instansi; });
+}
+function bacaFormTamu(){
+  var cara = document.querySelector('input[name=cara]:checked');
+  return {salam: el("salam").value.trim(), tamu: bacaTamu(), cara_tampil: cara ? cara.value : "baris", pesan: el("pesan").value.trim()};
+}
+function tandaTamu(o){ return JSON.stringify([o.salam, o.tamu, o.cara_tampil, o.pesan]); }
+
+function segarkanStatus(){
+  if (!state) return;
+  el("form-keluar").hidden = !state.publik;
+  el("panel-wifi").hidden = true;   /* WiFi box diatur dari menu Setelan di box */
+  el("isian-layar-tv").hidden = true;   /* menghentikan sinyal ke TV hanya ada di Raspberry Pi */
+  var layarMati = state.layar === "mati", tl = el("layar-tombol");
+  tl.hidden = false;
+  tl.textContent = layarMati ? "Nyalakan layar TV" : "Matikan layar TV";
+  tl.classList.toggle("mati", layarMati);
+  el("tv-diam").hidden = DEMO || (typeof state.tv_detik === "number" && state.tv_detik <= 20);
+  var tampil = state.mode === "tamu" && state.tamu.length > 0;
+  el("titik").className = "titik" + (tampil && !layarMati ? " hidup" : "");
+  var st = el("status");
+  st.textContent = layarMati ? "Layar TV dimatikan. Saat dinyalakan: " : "Di TV sekarang: ";
+  var b = document.createElement("b");
+  if (tampil){
+    var nama = state.tamu.map(function(t){ return t.nama || t.instansi; });
+    b.textContent = nama.length > 2 ? nama[0] + " dan " + (nama.length - 1) + " tamu lain" : nama.join(" dan ");
+  } else {
+    b.textContent = "tidak ada tamu (standby)";
+  }
+  st.appendChild(b);
+
+  var form = bacaFormTamu(), c = el("catatan");
+  var beda = tandaTamu(form) !== tandaTamu(state);
+  if (tampil && beda){ c.textContent = "Ada perubahan yang belum tampil di TV."; c.className = "catatan belum"; }
+  else if (!tampil && form.tamu.length){ c.textContent = "Nama ini belum tampil di TV."; c.className = "catatan belum"; }
+  else { c.textContent = layarMati ? "Layar TV sedang dimatikan." : tampil ? "Sudah tampil di TV." : "Layar sedang standby."; c.className = "catatan"; }
+  el("kosongkan").disabled = !tampil;
+}
+
+el("daftar-tamu").addEventListener("click", function(e){
+  var t = e.target.closest(".hapus");
+  if (!t) return;
+  t.closest(".baris-tamu").remove();
+  rapikanTamu(); segarkanStatus();
+});
+el("tambah-tamu").addEventListener("click", function(){
+  var b = barisTamu();
+  el("daftar-tamu").appendChild(b);
+  rapikanTamu();
+  b.querySelector(".f-nama").focus();
+});
+el("form-tamu").addEventListener("input", function(){ rapikanTamu(); segarkanStatus(); });
+el("salam-cepat").addEventListener("click", function(e){
+  if (e.target.tagName !== "BUTTON") return;
+  el("salam").value = e.target.textContent;
+  segarkanStatus();
+});
+el("form-tamu").addEventListener("submit", function(e){
+  e.preventDefault();
+  var f = bacaFormTamu();
+  if (!f.tamu.length){
+    roti("Isi dulu nama tamunya.", true);
+    el("daftar-tamu").querySelector(".f-nama").focus();
+    return;
+  }
+  f.mode = "tamu";
+  var tadiMati = !!state && state.layar === "mati";
+  f.layar = "nyala";                         /* menampilkan tamu sekaligus menyalakan layar yang sedang dimatikan */
+  ubahState(f).then(function(s){ state = s; segarkanStatus(); roti(tadiMati ? "Layar dinyalakan, tamu tampil di TV." : "Tampil di TV."); }).catch(gagal);
+});
+el("kosongkan").addEventListener("click", function(){
+  ubahState({mode: "standby"}).then(function(s){ state = s; segarkanStatus(); roti("Layar dikosongkan."); }).catch(gagal);
+});
+
+/* ---------- latar ---------- */
+function ukuranTeks(b){
+  return b >= 1048576 ? (b / 1048576).toFixed(b >= 10485760 ? 0 : 1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
+}
+function gambarUbin(){
+  var w = el("ubin");
+  w.textContent = "";
+  var lt = (state && state.latar) || {};
+  var buat = function(jenis, file, judul, ket, isiGambar){
+    var u = document.createElement("div");
+    var dipakai = lt.jenis === jenis && (jenis !== "file" || lt.file === file);
+    u.className = "ubin" + (dipakai ? " dipakai" : "");
+    var tombol = document.createElement("button");
+    tombol.type = "button"; tombol.className = "pilih";
+    tombol.setAttribute("aria-pressed", dipakai ? "true" : "false");
+    tombol.appendChild(isiGambar);
+    var nama = document.createElement("span");
+    nama.className = "nama"; nama.textContent = judul; nama.title = judul;
+    var kecil = document.createElement("small"); kecil.textContent = ket;
+    nama.appendChild(kecil);
+    tombol.appendChild(nama);
+    tombol.addEventListener("click", function(){
+      ubahState({latar: {jenis: jenis, file: file}}).then(function(s){ state = s; gambarUbin(); segarkanTata(); roti("Latar diganti."); }).catch(gagal);
+    });
+    u.appendChild(tombol);
+    if (dipakai){
+      var t = document.createElement("span");
+      t.className = "tanda"; t.textContent = "Dipakai";
+      u.appendChild(t);
+    }
+    if (jenis === "file"){
+      var x = document.createElement("button");
+      x.type = "button"; x.className = "buang"; x.textContent = "×";
+      x.title = "Hapus " + file; x.setAttribute("aria-label", "Hapus " + file);
+      x.addEventListener("click", function(){
+        if (!confirm('Hapus "' + file + '" dari TV?')) return;
+        minta("DELETE", "/api/media?nama=" + encodeURIComponent(file))
+          .then(muatSemua).then(function(){ roti("Latar dihapus."); }).catch(gagal);
+      });
+      u.appendChild(x);
+    }
+    w.appendChild(u);
+  };
+  var kotak = function(kelas){ var d = document.createElement("span"); d.className = "gambar " + kelas; return d; };
+  buat("rodagigi", "", "Roda gigi", "Bawaan, bergerak", kotak("rodagigi"));
+  buat("polos", "", "Polos", "Bawaan", kotak("polos"));
+  buat("rodasudut", "", "Roda + bingkai", "Bawaan, bergerak", kotak("rodasudut"));
+  media.forEach(function(m){
+    var g;
+    if (m.jenis === "video"){
+      g = document.createElement("video");
+      g.muted = true; g.preload = "metadata"; g.src = m.url + "#t=0.5";
+    } else {
+      g = document.createElement("img");
+      g.alt = ""; g.loading = "lazy"; g.src = m.url;
+    }
+    g.className = "gambar";
+    buat("file", m.nama, m.nama, (m.jenis === "video" ? "Video, " : "Foto, ") + ukuranTeks(m.ukuran), g);
+  });
+}
+function unggah(berkas, url, batas){
+  return new Promise(function(selesai, tolak){
+    if (berkas.size > batas) return tolak(new Error('"' + berkas.name + '" terlalu besar (maksimal ' + ukuranTeks(batas) + ").") );
+    var x = new XMLHttpRequest(), bilah = el("kemajuan");
+    x.open("POST", url + "?nama=" + encodeURIComponent(berkas.name));
+    x.upload.onprogress = function(e){
+      if (e.lengthComputable) bilah.firstElementChild.style.width = (100 * e.loaded / e.total).toFixed(1) + "%";
+    };
+    x.onload = function(){
+      var d = {};
+      try { d = JSON.parse(x.responseText); } catch (e) {}
+      if (x.status === 401){ location.href = "/masuk"; return tolak(new Error("Login sudah habis, silakan masuk lagi.")); }
+      if (x.status >= 200 && x.status < 300) selesai(d);
+      else tolak(new Error(d.pesan || "Upload gagal (" + x.status + ")."));
+    };
+    x.onerror = function(){ tolak(new Error('Upload "' + berkas.name + '" terputus. Cek jenis berkas dan sambungan ke TV.')); };
+    x.send(berkas);
+  });
+}
+function unggahLatar(daftar){
+  if (DEMO) return roti("Upload aktif setelah dipasang di box.", true);
+  var berkas = Array.prototype.slice.call(daftar), boleh = /\.(mp4|m4v|webm|jpe?g|png|webp)$/i;
+  var salah = berkas.filter(function(b){ return !boleh.test(b.name); });
+  if (salah.length) return roti('"' + salah[0].name + '" tidak didukung. Pakai MP4, WebM, JPG, PNG, atau WebP.', true);
+  if (!berkas.length) return;
+  var bilah = el("kemajuan"), ket = el("ket-unggah"), ketAwal = ket.textContent, terakhir = "";
+  bilah.hidden = false; el("pilih-berkas").disabled = true;
+  var rantai = Promise.resolve();
+  berkas.forEach(function(b, i){
+    rantai = rantai.then(function(){
+      bilah.firstElementChild.style.width = "0";
+      ket.textContent = "Mengirim " + b.name + " (" + (i + 1) + " dari " + berkas.length + ")…";
+      return unggah(b, "/api/media", MAKS_UPLOAD).then(function(d){ terakhir = d.nama; });
+    });
+  });
+  rantai.then(function(){
+    return terakhir ? ubahState({latar: {jenis: "file", file: terakhir}}) : null;
+  }).then(function(){ roti("Latar terpasang di TV."); }, gagal).then(function(){
+    bilah.hidden = true; el("pilih-berkas").disabled = false; ket.textContent = ketAwal; el("berkas").value = "";
+    return muatSemua();
+  });
+}
+el("pilih-berkas").addEventListener("click", function(){
+  if (DEMO) return roti("Upload aktif setelah dipasang di box.", true);
+  el("berkas").click();
+});
+el("berkas").addEventListener("change", function(){ unggahLatar(this.files); });
+var kotakUnggah = el("unggah");
+["dragenter", "dragover"].forEach(function(n){
+  kotakUnggah.addEventListener(n, function(e){ e.preventDefault(); kotakUnggah.classList.add("seret"); });
+});
+["dragleave", "drop"].forEach(function(n){
+  kotakUnggah.addEventListener(n, function(e){ e.preventDefault(); kotakUnggah.classList.remove("seret"); });
+});
+kotakUnggah.addEventListener("drop", function(e){ if (e.dataTransfer && e.dataTransfer.files.length) unggahLatar(e.dataTransfer.files); });
+
+/* ---------- pengaturan (langsung tersimpan) ---------- */
+var tunda = {};
+function simpanNanti(kunci, nilai){
+  clearTimeout(tunda[kunci]);
+  tunda[kunci] = setTimeout(function(){
+    var p = {}; p[kunci] = nilai();
+    ubahState(p).then(function(s){ state = s; bentukBingkai(); segarkanLogo(); segarkanTema(); roti("Tersimpan."); }).catch(gagal);
+  }, 450);
+}
+function teksPosisi(v){ return v + "%" + (v == 0 ? " (atas)" : v == 50 ? " (tengah)" : v == 100 ? " (bawah)" : ""); }
+function teksKecepatan(v){ return v == 0 ? "Berhenti" : v + "%"; }
+el("posisi_isi").addEventListener("input", function(){
+  el("posisi_isi-nilai").textContent = teksPosisi(this.value);
+  var g = this; simpanNanti("posisi_isi", function(){ return +g.value; });
+});
+el("roda_kecepatan").addEventListener("input", function(){
+  el("roda_kecepatan-nilai").textContent = teksKecepatan(this.value);
+  var g = this; simpanNanti("roda_kecepatan", function(){ return +g.value; });
+});
+el("gelap").addEventListener("input", function(){
+  el("gelap-nilai").textContent = this.value + "%";
+  var g = this; simpanNanti("gelap", function(){ return +g.value; });
+});
+el("putar").addEventListener("change", function(){ var p = this; simpanNanti("putar", function(){ return +p.value; }); });
+el("jam").addEventListener("change", function(){ var j = this; simpanNanti("jam", function(){ return j.checked; }); });
+el("layar_tv").addEventListener("change", function(){ var j = this; simpanNanti("layar_tv", function(){ return j.checked; }); });
+el("layar-tombol").addEventListener("click", function(){
+  if (!state) return;
+  var mau = state.layar === "mati" ? "nyala" : "mati", t = this;
+  t.disabled = true;
+  ubahState({layar: mau}).then(function(s){ state = s; segarkanStatus(); roti(mau === "mati" ? "Layar TV dimatikan." : "Layar TV dinyalakan."); })
+    .catch(gagal).then(function(){ t.disabled = false; });
+});
+["perusahaan", "standby_judul", "standby_teks"].forEach(function(k){
+  el(k).addEventListener("input", function(){ var f = this; simpanNanti(k, function(){ return f.value.trim(); }); });
+});
+document.querySelectorAll("input[name=perataan]").forEach(function(r){
+  r.addEventListener("change", function(){ simpanNanti("perataan", function(){ return r.value; }); });
+});
+document.querySelectorAll("input[name=tata_teks]").forEach(function(r){
+  r.addEventListener("change", function(){
+    el("urutan-kotak").hidden = r.value !== "urutan";
+    simpanNanti("tata_teks", function(){ return r.value; });
+  });
+});
+document.querySelectorAll("input[name=warna_teks]").forEach(function(r){
+  r.addEventListener("change", function(){ simpanNanti("warna_teks", function(){ return r.value; }); });
+});
+
+/* ---------- urutan sendiri ---------- */
+var ISI_URUTAN = [["semua", "Salam, nama, instansi, pesan"], ["tamupesan", "Nama, instansi, pesan"], ["salam", "Salam"], ["tamu", "Nama dan instansi"], ["nama", "Nama saja"],
+                  ["pesan", "Pesan"], ["teks", "Tulisan sendiri"], ["kosong", "Kosong (tanpa tulisan)"]];
+var URUTAN_MAKS = 20, lamaVideo = {};
+function barisUrutan(u, nomor){
+  var b = document.createElement("div"), id = "u" + nomor + "-";
+  b.className = "baris-urutan";
+  b.innerHTML = '<span class="nomor"></span>'
+    + '<div class="u-isi"><label for="' + id + 'isi">Yang ditampilkan</label><select id="' + id + 'isi" class="f-isi"></select></div>'
+    + '<div class="u-ukuran"><label for="' + id + 'ukuran">Ukuran %</label><input type="number" id="' + id + 'ukuran" class="f-ukuran" min="40" max="250" step="5" inputmode="numeric"></div>'
+    + '<div><label for="' + id + 'lama">Lama (detik)</label><input type="number" id="' + id + 'lama" class="f-lama" min="0.5" max="600" step="0.5" inputmode="decimal"></div>'
+    + '<div><label for="' + id + 'posisi">Posisi %</label><input type="number" id="' + id + 'posisi" class="f-posisi" min="0" max="100" step="5" inputmode="numeric"></div>'
+    + '<div class="u-warna"><label for="' + id + 'warna">Warna</label><select id="' + id + 'warna" class="f-warna">'
+    + '<option value="ikut">Ikut</option><option value="hitam">Hitam</option><option value="putih">Putih</option><option value="merah">Merah</option></select></div>'
+    + '<div class="u-tombol"><button type="button" class="u-naik" aria-label="Geser ke atas" title="Geser ke atas">↑</button>'
+    + '<button type="button" class="u-turun" aria-label="Geser ke bawah" title="Geser ke bawah">↓</button>'
+    + '<button type="button" class="u-hapus" aria-label="Hapus urutan ini" title="Hapus urutan ini">×</button></div>'
+    + '<div class="u-teks" hidden><label for="' + id + 'teks">Tulisannya</label><input type="text" id="' + id + 'teks" class="f-teks" maxlength="200" placeholder="Misalnya: Utamakan keselamatan kerja"></div>';
+  var pilih = b.querySelector(".f-isi");
+  ISI_URUTAN.forEach(function(p){ var o = document.createElement("option"); o.value = p[0]; o.textContent = p[1]; pilih.appendChild(o); });
+  pilih.value = u.isi || "semua";
+  b.querySelector(".f-ukuran").value = u.ukuran === undefined ? 100 : u.ukuran;
+  b.querySelector(".f-lama").value = u.lama === undefined ? 5 : u.lama;
+  b.querySelector(".f-posisi").value = u.posisi === undefined ? 50 : u.posisi;
+  b.querySelector(".f-teks").value = u.teks || "";
+  b.querySelector(".f-warna").value = ["hitam", "putih", "merah"].indexOf(u.warna) >= 0 ? u.warna : "ikut";
+  return b;
+}
+function rapikanUrutan(){
+  var baris = el("urutan-daftar").children, jumlah = 0;
+  for (var i = 0; i < baris.length; i++){
+    var b = baris[i], isi = b.querySelector(".f-isi").value;
+    b.querySelector(".nomor").textContent = (i + 1) + ".";
+    b.querySelector(".u-teks").hidden = isi !== "teks";
+    b.querySelector(".f-ukuran").disabled = b.querySelector(".f-posisi").disabled = b.querySelector(".f-warna").disabled = isi === "kosong";
+    b.querySelector(".u-naik").disabled = i === 0;
+    b.querySelector(".u-turun").disabled = i === baris.length - 1;
+    b.querySelector(".u-hapus").disabled = baris.length === 1;
+    jumlah += Math.max(.5, Math.min(600, parseFloat(b.querySelector(".f-lama").value) || 5));
+  }
+  el("urutan-tambah").disabled = baris.length >= URUTAN_MAKS;
+  var desimal = function(n){ return String(Math.round(n * 10) / 10).replace(".", ","); };
+  var teksJumlah = "Jumlah lama: " + desimal(jumlah) + " detik.";
+  var lt = state && state.latar, berkas = lt && lt.jenis === "file" && /\.(mp4|webm|m4v)$/i.test(lt.file || "") ? lt.file : "";
+  if (berkas && lamaVideo[berkas]) teksJumlah += " Video latar: " + desimal(lamaVideo[berkas]) + " detik.";
+  else if (berkas && !DEMO && lamaVideo[berkas] === undefined){
+    lamaVideo[berkas] = 0;                      /* cari tahu lama videonya, sekali saja */
+    var v = document.createElement("video");
+    v.preload = "metadata"; v.muted = true;
+    v.onloadedmetadata = function(){ lamaVideo[berkas] = isFinite(v.duration) ? v.duration : 0; v.removeAttribute("src"); v.load(); rapikanUrutan(); };
+    v.src = "/media/" + encodeURIComponent(berkas);
+  }
+  el("urutan-jumlah").textContent = teksJumlah;
+}
+function gambarUrutan(){
+  var wadah = el("urutan-daftar"), daftar = state && state.urutan && state.urutan.length ? state.urutan : BAWAAN.urutan;
+  wadah.textContent = "";
+  daftar.forEach(function(u, i){ wadah.appendChild(barisUrutan(u, i)); });
+  rapikanUrutan();
+}
+function bacaUrutan(){
+  var angka = function(v, bawah, atas, bawaan){ v = parseFloat(v); return isNaN(v) ? bawaan : Math.max(bawah, Math.min(atas, v)); };
+  return Array.prototype.map.call(el("urutan-daftar").children, function(b){
+    var isi = b.querySelector(".f-isi").value;
+    return {isi: isi, teks: isi === "teks" ? b.querySelector(".f-teks").value : "",
+      ukuran: Math.round(angka(b.querySelector(".f-ukuran").value, 40, 250, 100)),
+      posisi: Math.round(angka(b.querySelector(".f-posisi").value, 0, 100, 50)),
+      lama: Math.round(angka(b.querySelector(".f-lama").value, .5, 600, 5) * 10) / 10,
+      warna: b.querySelector(".f-warna").value};
+  });
+}
+function simpanUrutan(){ rapikanUrutan(); simpanNanti("urutan", bacaUrutan); }
+el("urutan-daftar").addEventListener("input", simpanUrutan);
+el("urutan-daftar").addEventListener("change", simpanUrutan);
+el("urutan-daftar").addEventListener("click", function(e){
+  var t = e.target.closest("button"); if (!t || t.disabled) return;
+  var b = t.closest(".baris-urutan"), wadah = el("urutan-daftar");
+  if (t.classList.contains("u-hapus")) b.remove();
+  else if (t.classList.contains("u-naik")) wadah.insertBefore(b, b.previousElementSibling);
+  else if (t.classList.contains("u-turun")) wadah.insertBefore(b.nextElementSibling, b);
+  else return;
+  simpanUrutan();
+});
+/* ---------- simpanan urutan: beberapa urutan bernama, misalnya satu untuk tiap video latar ---------- */
+function gambarSimpanan(){
+  var wadah = el("simpanan-daftar"), daftar = (state && state.urutan_simpanan) || [];
+  wadah.textContent = "";
+  daftar.forEach(function(sp, i){
+    var b = document.createElement("div"), nama = document.createElement("div"), judul = document.createElement("b"), ket = document.createElement("span");
+    var jumlah = 0; (sp.urutan || []).forEach(function(u){ jumlah += +u.lama || 0; });
+    b.className = "baris-simpanan"; nama.className = "s-nama";
+    judul.textContent = sp.nama;
+    ket.textContent = (sp.urutan || []).length + " urutan, " + String(Math.round(jumlah * 10) / 10).replace(".", ",") + " detik"
+      + (sp.latar ? ", latar: " + sp.latar : "");
+    nama.appendChild(judul); nama.appendChild(ket); b.appendChild(nama);
+    [["Pakai", "s-pakai", ""], ["Hapus", "s-hapus", " bahaya"]].forEach(function(t){
+      var tb = document.createElement("button");
+      tb.type = "button"; tb.className = "tombol kecil " + t[1] + t[2]; tb.textContent = t[0]; tb.dataset.i = i;
+      b.appendChild(tb);
+    });
+    wadah.appendChild(b);
+  });
+}
+el("simpanan-simpan").addEventListener("click", function(){
+  var nama = el("simpanan-nama").value.replace(/\s+/g, " ").trim();
+  if (!nama){ roti("Isi dulu nama simpanannya.", true); el("simpanan-nama").focus(); return; }
+  var daftar = ((state && state.urutan_simpanan) || []).slice(), lt = state.latar || {};
+  var baru = {nama: nama, latar: lt.jenis === "file" ? lt.file : "", urutan: bacaUrutan()}, ada = -1;
+  daftar.forEach(function(sp, i){ if (sp.nama === nama) ada = i; });
+  if (ada < 0 && daftar.length >= 20){ roti("Simpanan sudah 20. Hapus dulu yang tidak dipakai.", true); return; }
+  if (ada >= 0) daftar[ada] = baru; else daftar.push(baru);
+  ubahState({urutan_simpanan: daftar}).then(function(s){
+    state = s; gambarSimpanan(); el("simpanan-nama").value = "";
+    roti(ada >= 0 ? "Simpanan “" + nama + "” diperbarui." : "Urutan disimpan sebagai “" + nama + "”.");
+  }).catch(gagal);
+});
+el("simpanan-nama").addEventListener("keydown", function(e){ if (e.key === "Enter"){ e.preventDefault(); el("simpanan-simpan").click(); } });
+el("simpanan-daftar").addEventListener("click", function(e){
+  var t = e.target.closest("button"); if (!t) return;
+  var daftar = ((state && state.urutan_simpanan) || []).slice(), sp = daftar[+t.dataset.i];
+  if (!sp) return;
+  if (t.classList.contains("s-hapus")){
+    if (!confirm('Hapus simpanan "' + sp.nama + '"?')) return;
+    daftar.splice(+t.dataset.i, 1);
+    ubahState({urutan_simpanan: daftar}).then(function(s){ state = s; gambarSimpanan(); roti("Simpanan dihapus."); }).catch(gagal);
+    return;
+  }
+  /* Pakai: pasang urutannya; latarnya juga, kalau berkasnya masih ada di daftar latar */
+  clearTimeout(tunda.urutan);
+  var perubahan = {urutan: sp.urutan, tata_teks: "urutan"}, adaLatar = false;
+  if (sp.latar) media.forEach(function(m){ if (m.nama === sp.latar) adaLatar = true; });
+  if (adaLatar) perubahan.latar = {jenis: "file", file: sp.latar};
+  ubahState(perubahan).then(function(s){
+    state = s; gambarUrutan(); gambarUbin();
+    roti("Urutan “" + sp.nama + "” dipakai" + (adaLatar ? ", latarnya " + sp.latar + "." : sp.latar ? ". Latar " + sp.latar + " sudah tidak ada, jadi latar tidak diganti." : "."));
+  }).catch(gagal);
+});
+
+el("urutan-tambah").addEventListener("click", function(){
+  var wadah = el("urutan-daftar");
+  if (wadah.children.length >= URUTAN_MAKS) return;
+  var b = barisUrutan({isi: "tamu", ukuran: 100, lama: 5, posisi: 50, teks: "", warna: "ikut"}, Date.now());
+  wadah.appendChild(b); simpanUrutan(); b.querySelector(".f-isi").focus();
+});
+document.querySelectorAll("input[name=tema]").forEach(function(r){
+  r.addEventListener("change", function(){ simpanNanti("tema", function(){ return r.value; }); });
+});
+/* Menyegarkan bagian "Susunan tulisan" setelah keadaan berubah (jumlah lama, lama video latar). */
+function segarkanTata(){
+  if (!state) return;
+  if (!el("urutan-kotak").hidden) rapikanUrutan();
+}
+function segarkanTema(){
+  segarkanTata();
+  var terang = !!state && (state.tema === "terang" || state.tema === "pucat");
+  el("ubin").classList.toggle("terang", terang);
+  el("ubin").classList.toggle("pucat", !!state && state.tema === "pucat");
+  el("ubin").classList.toggle("gelapmerah", !!state && state.tema === "gelapmerah");
+  el("label-gelap").textContent = (terang ? "Putihkan" : "Gelapkan") + " video atau foto supaya tulisan terbaca";
+}
+function bentukBingkai(){
+  var berdiri = !state || state.putar === 90 || state.putar === 270;
+  el("bingkai").classList.toggle("datar", !berdiri);
+}
+function segarkanLogo(){
+  if (!state) return;
+  var tanpa = state.logo === "-", unggahan = !!state.logo && !tanpa && !DEMO;
+  var g = el("logo-gambar");
+  g.hidden = tanpa;
+  if (!tanpa){
+    var terang = state.tema === "terang" || state.tema === "pucat", bawaan = "logo-agi.svg";
+    var url = unggahan ? "/logo/" + encodeURIComponent(state.logo) : (DEMO ? bawaan : "/" + bawaan);
+    if (g.getAttribute("src") !== url) g.src = url;
+    g.classList.toggle("terang", terang);
+  }
+  el("logo-ket").textContent = tanpa ? "TV tampil tanpa logo." : unggahan ? "Logo unggahan: " + state.logo : "Logo AGI bawaan";
+  el("logo-bawaan").hidden = !tanpa && !unggahan;
+  el("logo-tanpa").hidden = tanpa;
+}
+el("pilih-logo").addEventListener("click", function(){
+  if (DEMO) return roti("Upload aktif setelah dipasang di box.", true);
+  el("berkas-logo").click();
+});
+el("berkas-logo").addEventListener("change", function(){
+  var b = this.files[0];
+  if (!b) return;
+  if (!/\.(png|jpe?g|webp|svg)$/i.test(b.name)){ this.value = ""; return roti("Logo harus PNG, JPG, WebP, atau SVG.", true); }
+  unggah(b, "/api/logo", 10 * 1024 * 1024).then(function(s){ state = s; segarkanLogo(); segarkanTema(); roti("Logo terpasang."); }, gagal)
+    .then(function(){ el("berkas-logo").value = ""; });
+});
+el("logo-bawaan").addEventListener("click", function(){
+  (DEMO ? ubahState({logo: ""}) : minta("DELETE", "/api/logo"))
+    .then(function(s){ state = s; segarkanLogo(); segarkanTema(); roti("Logo bawaan dipakai."); }).catch(gagal);
+});
+el("logo-tanpa").addEventListener("click", function(){
+  ubahState({logo: "-"}).then(function(s){ state = s; segarkanLogo(); segarkanTema(); roti("Logo disembunyikan."); }).catch(gagal);
+});
+el("logo_ukuran").addEventListener("input", function(){
+  el("logo_ukuran-nilai").textContent = this.value + "%";
+  var u = this; simpanNanti("logo_ukuran", function(){ return +u.value; });
+});
+document.querySelectorAll("input[name=logo_posisi]").forEach(function(r){
+  r.addEventListener("change", function(){ simpanNanti("logo_posisi", function(){ return r.value; }); });
+});
+
+/* ---------- ukuran huruf dan jarak per baris ---------- */
+function gayaSekarang(){
+  var g = {}, punya = (state && state.gaya) || {};
+  GAYA_KUNCI.forEach(function(k){
+    var v = punya[k] || {};
+    g[k] = {u: typeof v.u === "number" ? v.u : 100, j: typeof v.j === "number" ? v.j : 100};
+  });
+  return g;
+}
+function gambarGaya(){
+  var t = el("tabel-gaya"), g = gayaSekarang();
+  t.textContent = "";
+  GAYA_BARIS.forEach(function(b){
+    var baris = document.createElement("div");
+    baris.className = "baris-gaya";
+    var judul = document.createElement("div"); judul.className = "judul"; judul.textContent = b.nama; baris.appendChild(judul);
+    [["u", b.k === "garis" ? "Panjang dan tebal" : "Ukuran huruf", 40, 250, 5, true], ["j", "Jarak di atasnya", 0, 400, 10, b.jarak]].forEach(function(a){
+      var sel = document.createElement("div");
+      if (a[5]){
+        var id = "gaya-" + b.k + "-" + a[0];
+        var lab = document.createElement("label"); lab.htmlFor = id; lab.textContent = a[1];
+        var kotak = document.createElement("div"); kotak.className = "geser";
+        var geser = document.createElement("input");
+        geser.type = "range"; geser.id = id; geser.min = a[2]; geser.max = a[3]; geser.step = a[4]; geser.value = g[b.k][a[0]];
+        var angka = document.createElement("output"); angka.htmlFor = id; angka.textContent = g[b.k][a[0]] + "%";
+        geser.addEventListener("input", function(){
+          angka.textContent = geser.value + "%";
+          simpanNanti("gaya", function(){
+            var semua = gayaSekarang();
+            GAYA_BARIS.forEach(function(x){ ["u", "j"].forEach(function(f){
+              var s = el("gaya-" + x.k + "-" + f); if (s) semua[x.k][f] = +s.value;
+            }); });
+            return semua;
+          });
+        });
+        kotak.appendChild(geser); kotak.appendChild(angka); sel.appendChild(lab); sel.appendChild(kotak);
+      }
+      baris.appendChild(sel);
+    });
+    t.appendChild(baris);
+  });
+}
+el("gaya-bawaan").addEventListener("click", function(){
+  var g = {}; GAYA_KUNCI.forEach(function(k){ g[k] = {u: 100, j: 100}; });
+  ubahState({gaya: g, posisi_isi: 50}).then(function(s){
+    state = s; gambarGaya();
+    el("posisi_isi").value = 50; el("posisi_isi-nilai").textContent = teksPosisi(50);
+    roti("Ukuran, jarak, dan posisi kembali ke bawaan.");
+  }).catch(gagal);
+});
+
+/* ---------- WiFi Pi (hanya di jaringan kantor) ---------- */
+var wifi = null, wifiTimer = null;
+function wifiKabar(teks, jenis){
+  var k = el("wifi-kabar");
+  k.hidden = !teks; k.textContent = teks || ""; k.className = "kabar" + (jenis ? " " + jenis : "");
+}
+function wifiGambar(){
+  var a = el("wifi-aktif");
+  if (wifi.aktif){
+    a.textContent = '"' + wifi.aktif + '"' + (wifi.sinyal != null ? ", sinyal " + wifi.sinyal + "%" : "")
+      + (wifi.ip ? ", alamat Pi " + wifi.ip : "");
+    el("wifi-ringkas").textContent = 'Sekarang: "' + wifi.aktif + '"';
+  } else {
+    a.textContent = wifi.tersambung ? "Tersambung" : "Pi tidak tersambung ke WiFi (mungkin memakai kabel LAN).";
+    el("wifi-ringkas").textContent = "Tidak tersambung ke WiFi";
+  }
+  var ul = el("wifi-tersimpan");
+  ul.textContent = "";
+  if (!wifi.tersimpan.length){
+    var kosong = document.createElement("li"); kosong.textContent = "Belum ada."; ul.appendChild(kosong);
+  }
+  wifi.tersimpan.forEach(function(t){
+    var li = document.createElement("li"), n = document.createElement("span");
+    n.className = "nama-wifi"; n.textContent = t.ssid; li.appendChild(n);
+    if (t.aktif){
+      var d = document.createElement("span"); d.className = "dipakai"; d.textContent = "Dipakai"; li.appendChild(d);
+    } else {
+      var p = document.createElement("button");
+      p.type = "button"; p.className = "tombol kecil"; p.textContent = "Pindah ke sini";
+      p.addEventListener("click", function(){ wifiKirim(t.ssid, "", true); });
+      var h = document.createElement("button");
+      h.type = "button"; h.className = "tombol kecil"; h.textContent = "Hapus";
+      h.addEventListener("click", function(){
+        if (!confirm('Hapus WiFi "' + t.ssid + '" dari Pi?')) return;
+        minta("DELETE", "/api/wifi?id=" + encodeURIComponent(t.id)).then(function(){ roti("WiFi dihapus."); return wifiMuat(false); }).catch(gagal);
+      });
+      li.appendChild(p); li.appendChild(h);
+    }
+    ul.appendChild(li);
+  });
+  var pilih = el("wifi-pilih"), tadi = pilih.value;
+  pilih.textContent = "";
+  wifi.terlihat.forEach(function(j){
+    var o = document.createElement("option");
+    o.value = j.ssid; o.textContent = j.ssid + "  (sinyal " + j.sinyal + "%" + (j.aman ? "" : ", tanpa password") + ")";
+    pilih.appendChild(o);
+  });
+  var lain = document.createElement("option");
+  lain.value = ""; lain.textContent = "Ketik nama WiFi sendiri…"; pilih.appendChild(lain);
+  if (tadi && Array.prototype.some.call(pilih.options, function(o){ return o.value === tadi; })) pilih.value = tadi;
+  el("wifi-nama").hidden = pilih.value !== "";
+}
+function wifiMuat(pindai){
+  return minta("GET", "/api/wifi" + (pindai ? "?pindai=1" : "")).then(function(d){
+    wifi = d; wifiGambar();
+    el("form-wifi").hidden = false;
+    return d;
+  });
+}
+function wifiPantau(ssid){
+  var mulai = Date.now(), putus = 0;
+  clearInterval(wifiTimer);
+  el("wifi-simpan").disabled = true;
+  wifiTimer = setInterval(function(){
+    wifiMuat(false).then(function(d){
+      putus = 0;
+      if (d.sibuk) return;
+      clearInterval(wifiTimer); el("wifi-simpan").disabled = false;
+      if (d.hasil) wifiKabar(d.hasil.teks, d.hasil.berhasil ? "jadi" : "gagal");
+    }).catch(function(){
+      putus++;
+      if (Date.now() - mulai < 100000) return;
+      clearInterval(wifiTimer); el("wifi-simpan").disabled = false;
+      wifiKabar('Pi tidak terjangkau dari jaringan ini, kemungkinan sudah pindah ke "' + ssid + '". Sambungkan laptop atau HP ini ke WiFi yang sama, lalu buka lagi http://tvtamu.local/admin.', "");
+    });
+  }, 4000);
+}
+function wifiKirim(ssid, sandi, pindah){
+  if (pindah && !confirm('Pindahkan Pi ke WiFi "' + ssid + '" sekarang?\n\nSelama pindah, halaman ini terputus sebentar. Kalau gagal, Pi kembali sendiri ke WiFi sebelumnya. Kalau berhasil dan WiFi-nya berbeda dari yang dipakai laptop ini, laptop juga harus pindah ke WiFi itu untuk membuka admin.')) return;
+  minta("POST", "/api/wifi", {ssid: ssid, sandi: sandi, pindah: !!pindah}).then(function(d){
+    el("wifi-sandi").value = "";
+    if (d.pindah){
+      wifiKabar('Pi sedang pindah ke "' + ssid + '". Tunggu sampai satu menit, hasilnya muncul di sini.', "");
+      wifiPantau(ssid);
+    } else {
+      wifiKabar('WiFi "' + ssid + '" tersimpan. Pi akan memakainya kalau WiFi itu terjangkau dan yang sekarang tidak ada.', "jadi");
+      return wifiMuat(false);
+    }
+  }).catch(function(e){ wifiKabar(e.message, "gagal"); });
+}
+el("panel-wifi").addEventListener("toggle", function(){
+  if (!this.open || wifi) return;
+  el("form-wifi").hidden = true;
+  wifiMuat(false).catch(function(e){ el("wifi-aktif").textContent = e.message; el("wifi-ringkas").textContent = "Tidak tersedia"; });
+});
+el("wifi-pilih").addEventListener("change", function(){
+  el("wifi-nama").hidden = this.value !== "";
+  if (this.value === "") el("wifi-nama").focus();
+});
+el("wifi-lihat").addEventListener("change", function(){ el("wifi-sandi").type = this.checked ? "text" : "password"; });
+el("wifi-pindai").addEventListener("click", function(){
+  var t = this; t.disabled = true; t.textContent = "Memindai…";
+  wifiMuat(true).then(function(){ roti("Daftar WiFi diperbarui."); }, gagal)
+    .then(function(){ t.disabled = false; t.textContent = "Pindai ulang"; });
+});
+el("form-wifi").addEventListener("submit", function(e){
+  e.preventDefault();
+  var ssid = (el("wifi-pilih").value || el("wifi-nama").value).trim(), sandi = el("wifi-sandi").value;
+  if (!ssid){ wifiKabar("Pilih atau ketik nama WiFi-nya dulu.", "gagal"); return; }
+  var terlihat = (wifi ? wifi.terlihat : []).filter(function(j){ return j.ssid === ssid; })[0];
+  var sudahAda = (wifi ? wifi.tersimpan : []).some(function(t){ return t.ssid === ssid; });
+  if (!sandi && !sudahAda && (!terlihat || terlihat.aman)){
+    wifiKabar("Isi password WiFi-nya. Kosongkan hanya untuk WiFi tanpa password.", "gagal"); el("wifi-sandi").focus(); return;
+  }
+  if (sandi && (sandi.length < 8 || sandi.length > 63)){ wifiKabar("Password WiFi harus 8 sampai 63 huruf/angka.", "gagal"); return; }
+  wifiKirim(ssid, sandi, el("wifi-pindah").checked);
+});
+
+/* ---------- muat ---------- */
+function isiForm(){
+  el("salam").value = state.salam;
+  isiDaftarTamu(state.tamu);
+  el("pesan").value = state.pesan;
+  var cara = document.querySelector('input[name=cara][value="' + state.cara_tampil + '"]');
+  if (cara) cara.checked = true;
+  el("gelap").value = state.gelap; el("gelap-nilai").textContent = state.gelap + "%";
+  var pi = typeof state.posisi_isi === "number" ? state.posisi_isi : 50, rk = typeof state.roda_kecepatan === "number" ? state.roda_kecepatan : 100;
+  el("posisi_isi").value = pi; el("posisi_isi-nilai").textContent = teksPosisi(pi);
+  el("roda_kecepatan").value = rk; el("roda_kecepatan-nilai").textContent = teksKecepatan(rk);
+  el("putar").value = String(state.putar);
+  el("jam").checked = !!state.jam;
+  el("layar_tv").checked = !!state.layar_tv;
+  el("perusahaan").value = state.perusahaan;
+  el("standby_judul").value = state.standby_judul;
+  el("standby_teks").value = state.standby_teks;
+  var rata = document.querySelector('input[name=perataan][value="' + state.perataan + '"]');
+  if (rata) rata.checked = true;
+  var tata = document.querySelector('input[name=tata_teks][value="' + (state.tata_teks === "urutan" ? "urutan" : "biasa") + '"]');
+  if (tata) tata.checked = true;
+  el("urutan-kotak").hidden = state.tata_teks !== "urutan";
+  gambarUrutan(); gambarSimpanan();
+  var warna = document.querySelector('input[name=warna_teks][value="' + (["hitam", "putih", "merah"].indexOf(state.warna_teks) >= 0 ? state.warna_teks : "tema") + '"]');
+  if (warna) warna.checked = true;
+  var tema = document.querySelector('input[name=tema][value="' + (["gelapmerah", "terang", "pucat"].indexOf(state.tema) >= 0 ? state.tema : "gelap") + '"]');
+  if (tema) tema.checked = true;
+  var uk = state.logo_ukuran || 100;
+  el("logo_ukuran").value = uk; el("logo_ukuran-nilai").textContent = uk + "%";
+  var pos = document.querySelector('input[name=logo_posisi][value="' + (state.logo_posisi || "kiri") + '"]');
+  if (pos) pos.checked = true;
+  gambarGaya();
+  rapikanTamu();
+}
+function muatSemua(){
+  var m = DEMO ? Promise.resolve({media: []}) : minta("GET", "/api/media");
+  return Promise.all([ambilState(), m]).then(function(h){
+    var pertama = state === null;
+    state = h[0]; media = h[1].media || [];
+    if (pertama) isiForm();
+    gambarUbin(); bentukBingkai(); segarkanLogo(); segarkanTema(); segarkanStatus();
+  });
+}
+
+el("demo").hidden = !DEMO;
+el("layar").src = DEMO ? "tv.html?pratinjau=1" : "/tv?pratinjau=1";
+el("tautan-tv").href = DEMO ? "tv.html" : "/tv";
+muatSemua().catch(function(e){
+  el("status").textContent = "TV tidak terhubung";
+  gagal(e);
+});
+/* ikuti perubahan dari admin lain (misalnya dari HP) tanpa menimpa isian yang sedang diketik */
+if (!DEMO) setInterval(function(){
+  minta("GET", "/api/state").then(function(s){
+    if (!state){ return muatSemua(); }
+    if (s.rev !== state.rev){
+      var urutanBerubah = JSON.stringify(s.urutan) !== JSON.stringify(state.urutan);
+      state = s; gambarUbin(); bentukBingkai(); segarkanLogo(); segarkanTema();
+      /* urutan yang diubah dari perangkat lain: tampilkan, kecuali kalau di sini sedang diketik */
+      if (urutanBerubah && !el("urutan-daftar").contains(document.activeElement)) gambarUrutan();
+      gambarSimpanan();
+      var tataKini = document.querySelector('input[name=tata_teks][value="' + (s.tata_teks === "urutan" ? "urutan" : "biasa") + '"]');
+      if (tataKini) tataKini.checked = true;
+      el("urutan-kotak").hidden = s.tata_teks !== "urutan";
+    }
+    else state.tv_detik = s.tv_detik;
+    segarkanStatus();
+  }).catch(function(){ el("status").textContent = "TV tidak terhubung"; el("titik").className = "titik"; });
+}, 4000);
+})();
+</script>
+</body>
+</html>

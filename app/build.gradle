@@ -3,47 +3,43 @@ plugins {
 }
 
 android {
-    namespace 'id.bram.flipclock'
+    namespace 'id.bram.tvtamubox'
     compileSdk 34
 
     defaultConfig {
-        applicationId 'id.bram.flipclock'
-        minSdk 24
+        applicationId "id.bram.tvtamubox"
+        minSdk 24            // Android 7 ke atas (mesin browser bawaannya bisa diperbarui)
         targetSdk 34
-        versionCode 1
-        versionName '1.0'
+        versionCode 10
+        versionName "1.9"
     }
 
+    // Kunci tanda tangan tetap (ikut di repo), supaya versi berikutnya bisa dipasang menimpa versi lama
+    // tanpa menghapus tulisan dan latar yang tersimpan di box.
     signingConfigs {
-        fixed {
-            storeFile file('flipclock.keystore')
-            storePassword 'flipclock123'
-            keyAlias 'flipclock'
-            keyPassword 'flipclock123'
+        debug {
+            storeFile file('tvtamu.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
         }
     }
 
     buildTypes {
+        debug {
+            signingConfig signingConfigs.debug
+        }
         release {
             minifyEnabled false
-            signingConfig signingConfigs.fixed
         }
-        debug {
-            signingConfig signingConfigs.fixed
-        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
     }
 
     lint {
         abortOnError false
-        checkReleaseBuilds false
     }
-
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_17
-        targetCompatibility JavaVersion.VERSION_17
-    }
-}
-
-dependencies {
-    implementation 'androidx.webkit:webkit:1.11.0'
 }
